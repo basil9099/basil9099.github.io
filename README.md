@@ -12,7 +12,7 @@ The blog focuses on:
 
 ## 🔗 Live Blog
 
-👉 [https://angusdawson.github.io](https://angusdawson.github.io)
+👉 [https://basil9099.github.io](https://basil9099.github.io)
 
 ---
 
