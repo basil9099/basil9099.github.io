@@ -2,7 +2,8 @@ baseURL: "https://basil9099.github.io/"
 title: "Angus Dawson — Homelab & CTFs"
 languageCode: "en-us"
 theme: "PaperMod"
-paginate: 10
+pagination:
+  pagerSize: 10
 
 taxonomies:
   category: categories
