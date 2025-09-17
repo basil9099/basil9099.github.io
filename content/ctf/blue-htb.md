@@ -16,7 +16,7 @@ cover:
 
 ---
 
-> ⚠️ **Spoiler warning**: This covers a retired HTB machine. IPs and hostnames are redacted. This writeup documents my playthrough of the retired Hack The Box machine **Blue**. 
+> ⚠️ **Spoiler warning**: This covers a retired HTB machine. This writeup documents my playthrough of the retired Hack The Box machine **Blue**. 
 
 The VPN IPs shown below are the HTB-assigned VPN addresses used during the box (left intact here for reproducibility). Do not attempt this on non-authorised or active systems.
 
@@ -54,8 +54,6 @@ A full scan confirmed SMB was exposed and appeared to be running SMBv1.
 enum4linux -a 10.129.242.117
 ```
 ![enum4linux for SMB enumeration](/images/blue/smb_enumeration.png)
-
-![enum4linux interesting output](/images/blue/smb_enumeration.png)
 
 **Anonymous SMB session also succeeded**
 
