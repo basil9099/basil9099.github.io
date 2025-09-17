@@ -1,0 +1,35 @@
+baseURL: "https://basil9099.github.io/"
+title: "Angus Dawson — Homelab & CTFs"
+languageCode: "en-us"
+theme: "PaperMod"
+paginate: 10
+
+taxonomies:
+  category: categories
+  tag: tags
+  series: series
+
+params:
+  defaultTheme: auto
+  ShowPostNavLinks: true
+  ShowShareButtons: true
+  ShowCodeCopyButtons: true
+  ShowReadingTime: true
+  homeInfoParams:
+    Title: "Homelab & CTF Writeups"
+    Content: "eJPT • HTB/THM • AD labs • Cheat sheets"
+
+menu:
+  main:
+    - name: CTFs
+      url: /ctf/
+      weight: 10
+    - name: Homelab
+      url: /homelab/
+      weight: 20
+    - name: Cheats
+      url: /cheats/
+      weight: 30
+
+outputs:
+  home: ["HTML", "RSS", "JSON"]   # JSON enables PaperMod search
