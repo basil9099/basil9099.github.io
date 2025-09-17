@@ -1,6 +1,11 @@
+
+---
+
+# 📄 `LICENSE`
+```text
 MIT License
 
-Copyright (c) 2025 basil9099
+Copyright (c) 2025 Angus Dawson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +24,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+# Content License (CC BY-NC-SA 4.0)
+
+The written content and images in this repository (e.g., blog posts under `content/`
+and media under `static/images/`) are licensed under the Creative Commons
+Attribution-NonCommercial-ShareAlike 4.0 International License.
+
+You may view the full license text here:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
