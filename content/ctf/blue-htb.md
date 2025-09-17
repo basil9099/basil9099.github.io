@@ -6,6 +6,14 @@ series: ["Hack The Box — retired"]
 difficulty: "Easy"
 platform: "Hack The Box"
 summary: "Exploiting MS17-010 (EternalBlue) on a Windows 7 SP1 target. Recon, SMB enumeration, exploitation, and proof of SYSTEM access."
+images: ["/images/blue/blue.webp"]
+cover:
+  image: "/images/blue/blue.webp"
+  alt: "Blue HTB image"
+  caption: "Blue - CTF - Hack The Box"
+  relative: true
+  hidden: false
+
 ---
 
 > ⚠️ **Spoiler warning**: This covers a retired HTB machine. IPs and hostnames are redacted. This writeup documents my playthrough of the retired Hack The Box machine **Blue**. 
