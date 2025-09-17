@@ -1,4 +1,4 @@
-# Angus Dawson — Homelab & CTF Blog
+# Basil9099 — Homelab # Angus Dawson — Homelab & CTF Blog CTF Blog
 
 This repository contains my personal cybersecurity blog, built with [Hugo](https://gohugo.io/) and the [PaperMod](https://github.com/adityatelange/hugo-PaperMod) theme.
 
