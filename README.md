@@ -37,8 +37,8 @@ Copy code
 
 # clone repo (with submodules)
 
-git clone --recurse-submodules https://github.com/angusdawson/angusdawson.github.io.git
-cd angusdawson.github.io
+git clone --recurse-submodules https://github.com/basil9099/basil9099.github.io.git
+cd basil9099.github.io
 
 # run locally
 
