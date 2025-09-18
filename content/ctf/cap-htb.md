@@ -85,10 +85,7 @@ getcap -r / 2>/dev/null
 **Relevant output:**
 
 /usr/bin/python3.8 = cap_setuid,cap_net_bind_service+eip
-/usr/bin/ping = cap_net_raw+ep
-/usr/bin/traceroute6.iputils = cap_net_raw+ep
-/usr/bin/mtr-packet = cap_net_raw+ep
-/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper = cap_net_bind_service,cap_net_admin+ep
+
 What this means: getcap shows POSIX file capabilities on binaries. The entry for /usr/bin/python3.8 includes cap_setuid, indicating that this binary can change its UID — it can be abused to escalate privileges without needing a password.
 ![Local enumeration  with getcap](/images/cap/getcap.png)
 
