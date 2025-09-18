@@ -37,10 +37,19 @@ Use these sample accounts for exercises and role-based scenarios.
 | bob.hr   | Bob        | Johnson   | HR Assistant           | HQ-201  | +1 (555) 0103 | bob.hr@homelab.local          |
 | carol.finance | Carol | Bright    | Financial Analyst      | HQ-301  | +1 (555) 0104 | carol.finance@homelab.local   |
 | david.bright | David  | Bright    | Finance Manager        | HQ-302  | +1 (555) 0105 | david.bright@homelab.local    |
-![Active Directory Users and Computers showing LabUsers OU](/images/homelab/windows-ad/Windows-10_AD_Setup.png)
 
 *Screenshot: ADUC with lab users provisioned (Helpdesk, HR, Finance, IT).*
+
 > Tip: store these users in a dedicated organizational unit (OU) and apply realistic group memberships (e.g., `Domain Users`, `Finance`, `Helpdesk`) to practice ACL and delegation scenarios.
+
+<p align="center">
+  <img src="/images/homelab/windows-ad/Windows-10_AD_Setup.png" 
+       alt="Active Directory Users and Computers showing LabUsers OU" 
+       style="max-width:100%;height:auto;" />
+  <br><em>Active Directory Users and Computers (ADUC) with LabUsers OU provisioned.</em>
+</p>
+
+
 
 ---
 
