@@ -5,6 +5,14 @@ author: "Basil9099"
 tags: ["HTB","OpenWrt","embedded","ftp","pcap","wps","reaver","privsec"]
 categories: ["CTF Writeups"]
 summary: "Anonymous FTP → backup extraction → credential reuse (SSH) → local wireless enumeration → WPS PIN attack (reaver) → root via local escalation."
+images: ["/images/wifinetic/wifinetic.webp"]
+cover:
+  image: "/images/wifinetic/wifinetic.webp"
+  alt: "Wifinetic HTB image"
+  caption: "Wifinetic - CTF - Hack The Box"
+  relative: true
+  hidden: false
+
 ---
 
 > ⚠️ **Spoiler warning — retired HTB machine.** 
