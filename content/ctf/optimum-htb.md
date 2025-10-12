@@ -5,7 +5,7 @@ draft: false
 author: "Angus Dawson"
 categories: ["HTB", "writeup", "pentest"]
 tags: ["HFS", "CVE-2014-6287", "metasploit", "privilege-escalation"]
-featured_image: "["/images/optimum/optimum-ctf.png"]
+featured_image: ["/images/optimum/optimum-ctf.png"]
 ---
 
 
@@ -182,6 +182,3 @@ msf6 exploit(ms16_032_...) > run
 This writeup documents testing performed on a lab/CTF box. Do not run these techniques against systems you do not own or do not have explicit permission to test. Always follow legal and ethical guidelines.
 
 ---
-
-
-
