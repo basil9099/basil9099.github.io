@@ -5,7 +5,14 @@ draft: false
 author: "Angus Dawson"
 categories: ["HTB", "writeup", "pentest"]
 tags: ["HFS", "CVE-2014-6287", "metasploit", "privilege-escalation"]
-featured_image: ["/images/optimum/optimum-ctf.png"]
+images: ["/images/optimum/optimum-ctf.png"]
+cover:
+  image: "/images/optimum/optimum-ctf.png"
+  alt: "Optimum HTB image"
+  caption: "Optimum - CTF - Hack The Box"
+  relative: true
+  hidden: false
+
 ---
 
 
