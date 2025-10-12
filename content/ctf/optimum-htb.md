@@ -5,7 +5,7 @@ draft: false
 author: "Angus Dawson"
 categories: ["HTB", "writeup", "pentest"]
 tags: ["HFS", "CVE-2014-6287", "metasploit", "privilege-escalation"]
-featured_image: "/images/optimum/optimum-ctf.png"
+featured_image: "["/images/optimum/optimum-ctf.png"]
 ---
 
 
@@ -41,11 +41,13 @@ Key output (trimmed):
 80/tcp open  http  HttpFileServer httpd 2.3
 ```
 
-![](./images/nmap.png)
+![Nmap ports output](/images/optimum/nmap.png)
+
+
 
 Because HFS 2.3 was present, I searched for known vulnerabilities and found **CVE-2014-6287** (RCE against HFS).  
 
-![](./images/found_CVE.png)
+![Found the CVE](/images/optimum/found_CVE.png)
 
 ---
 
@@ -65,7 +67,7 @@ run
 
 (Options screenshot for reproducibility)
 
-![](./images/set_options.png)
+![Set options](/images/optimum/set_options.png)
 
 The module delivered a payload and opened a Meterpreter session. From Meterpreter, I dropped into a shell:
 
@@ -77,7 +79,7 @@ C:\Users\kostas\Desktop> type user.txt
 
 User flag captured:
 
-![](./images/optimum/user-flag.png)
+![Found the user flag](/images/optimum/user-flag.png)
 
 ---
 
@@ -85,15 +87,15 @@ User flag captured:
 
 With a user shell, I moved to local privilege escalation. I inspected Metasploit’s `exploit/windows/local` options and used a mix of automatic suggestion + manual enumeration. A short list of candidate modules is shown below:
 
-![](./images/optimum/privesc_modules.png)
+![Metasploit privesc modules](/images/optimum/privesc_modules.png)
 
 I attempted multiple modules. Some aborted due to version/architecture mismatches (example failure):
 
-![](./images/optimum/privesc-fail.png)
+![Privesc module fail](/images/optimum/privesc-fail.png)
 
 After iterating, a local token/handle-based module completed successfully and produced a SYSTEM shell (example success output):
 
-![](./images/optimum/privesc-success.png)
+![Privesc module success](/images/optimum/privesc-success.png)
 
 From the elevated shell I read the Administrator/root flag:
 
@@ -102,7 +104,7 @@ C:\Users\Administrator\Desktop> type root.txt
 288b316926a699a4f6e8e76b61f1dba9
 ```
 
-![](./images/optimum/root-flag.png)
+![Found the root flag](/images/optimum/root-flag.png)
 
 ---
 
