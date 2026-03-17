@@ -2,13 +2,15 @@
 title: "Homelab & CTF Writeups"
 ---
 
-Welcome! I document my **CTF walkthroughs**, **homelab builds**, and **cheat sheets** here.  
-Code and raw notes live on my GitHub — posts link back where helpful.
+This site documents my **CTF walkthroughs**, **homelab builds**, and **cheat sheets**.
+Code and raw notes are available on GitHub — posts link back where relevant.
 
-## 🔗 Live Blog
-👉 [https://basil9099.github.io](https://basil9099.github.io)
+## Live Blog
 
-## 📂 Sections
+[https://basil9099.github.io](https://basil9099.github.io)
+
+## Sections
+
 - [CTFs](/ctf/)
 - [Homelab](/homelab/)
 - [Cheats](/cheats/)
