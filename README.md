@@ -1,51 +1,50 @@
-# Basil9099 — Homelab # Angus Dawson — Homelab & CTF Blog CTF Blog
+# Angus Dawson — Homelab & CTF Blog
 
-This repository contains my personal cybersecurity blog, built with [Hugo](https://gohugo.io/) and the [PaperMod](https://github.com/adityatelange/hugo-PaperMod) theme.
+A personal cybersecurity blog built with [Hugo](https://gohugo.io/) and the [PaperMod](https://github.com/adityatelange/hugo-PaperMod) theme.
 
-The blog focuses on:
+The blog covers:
 
-- 🧩 **CTF Writeups** — step-by-step walkthroughs of retired Hack The Box and TryHackMe machines, with emphasis on methodology and takeaways.
-- 🖥️ **Homelab Documentation** — notes from my Active Directory labs, Kerberos troubleshooting, detection experiments, and other hands-on projects.
-- 📒 **Cheat Sheets** — practical reference material I use when testing or studying.
-
----
-
-## 🔗 Live Blog
-
-👉 [https://basil9099.github.io](https://basil9099.github.io)
+- **CTF Writeups** — Step-by-step walkthroughs of retired Hack The Box and TryHackMe machines, with emphasis on methodology and key takeaways.
+- **Homelab Documentation** — Notes from Active Directory labs, Kerberos troubleshooting, detection experiments, and other hands-on projects.
+- **Cheat Sheets** — Practical reference material for use when testing or studying.
 
 ---
 
-## 📂 Repo Structure
+## Live Site
 
-content/ # Blog posts (Markdown)
-├─ ctf/ # CTF writeups
-├─ homelab/ # Homelab notes
-└─ cheats/ # Quick references
-static/images/ # Screenshots and diagrams
-themes/ # PaperMod theme (git submodule)
-.github/ # GitHub Actions workflow for Pages
-
-yaml
-Copy code
+[https://basil9099.github.io](https://basil9099.github.io)
 
 ---
 
-## ⚙️ Running Locally
+## Repository Structure
+
+```
+content/           # Blog posts (Markdown)
+├── ctf/           # CTF writeups
+├── homelab/       # Homelab notes
+└── cheats/        # Quick references
+static/images/     # Screenshots and diagrams
+themes/            # PaperMod theme (git submodule)
+.github/           # GitHub Actions workflow for Pages
+```
+
+---
+
+## Running Locally
 
 ```bash
-
-# clone repo (with submodules)
-
+# Clone the repo with submodules
 git clone --recurse-submodules https://github.com/basil9099/basil9099.github.io.git
 cd basil9099.github.io
 
-# run locally
-
+# Start the development server
 hugo server -D
 
-# open http://localhost:1313
+# Open http://localhost:1313
+```
 
-🛠️ Deployment
+---
 
-Every push to main triggers a GitHub Actions workflow that builds the Hugo site and publishes it to GitHub Pages.
+## Deployment
+
+Every push to `main` triggers a GitHub Actions workflow that builds the Hugo site and publishes it to GitHub Pages automatically.
