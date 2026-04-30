@@ -11,14 +11,24 @@ taxonomies:
   series: series
 
 params:
-  defaultTheme: auto
+  defaultTheme: dark
+  disableThemeToggle: true
   ShowPostNavLinks: true
   ShowShareButtons: true
   ShowCodeCopyButtons: true
   ShowReadingTime: true
+  ShowToc: true
+  TocOpen: false
+  ShowBreadCrumbs: true
+  mainSections:
+    - ctf
+    - homelab
+    - cheats
   homeInfoParams:
     Title: "Homelab & CTF Writeups"
     Content: "eJPT • HTB/THM • AD labs • Cheat sheets"
+  assets:
+    favicon: "/favicon.svg"
 
 menu:
   main:

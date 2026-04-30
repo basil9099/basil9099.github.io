@@ -1,0 +1,105 @@
+{{- define "main" }}
+
+<section class="terminal-hero" aria-label="intro">
+  <div class="terminal-hero-bar">
+    <span class="traffic">● ● ●</span>
+    <span>angus@homelab: ~</span>
+    <span>zsh</span>
+  </div>
+  <div class="terminal-hero-body">
+    <div>
+      <span class="prompt">┌──(</span><span class="user">angus</span>@<span class="host">homelab</span><span class="prompt">)-[</span><span class="host">~</span><span class="prompt">]</span>
+    </div>
+    <div>
+      <span class="prompt">└─$</span> <span class="cmd">whoami</span>
+      <span class="out">angus — security learner • homelab tinkerer • CTF player</span>
+    </div>
+    <div>
+      <span class="prompt">└─$</span> <span class="cmd">cat /etc/motd</span>
+      <span class="out">{{ site.Params.homeInfoParams.Content | default "eJPT • HTB/THM • AD labs • Cheat sheets" }}</span>
+    </div>
+    <div>
+      <span class="prompt">└─$</span> <span class="cmd">ls writeups/</span>
+      <span class="out">ctf/ &nbsp; homelab/ &nbsp; cheats/</span>
+    </div>
+    <div>
+      <span class="prompt">└─$</span><span class="cursor"></span>
+    </div>
+  </div>
+</section>
+
+{{- $ctf := where site.RegularPages "Section" "ctf" }}
+{{- $homelab := where site.RegularPages "Section" "homelab" }}
+{{- $cheats := where site.RegularPages "Section" "cheats" }}
+
+{{- if $ctf }}
+<h2 class="section-prompt"><span class="p">~/</span><span class="path">ctf</span> <span class="p">$</span> ls -lt | head</h2>
+{{- range first 6 $ctf }}
+<article class="post-entry">
+  {{- $isHidden := (.Param "cover.hiddenInList") | default (.Param "cover.hidden") | default false }}
+  {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">
+      {{- .Title -}}
+      {{- with .Params.difficulty }}
+      <span class="difficulty-pill {{ . | lower }}" style="margin-left:10px;font-size:0.55em;vertical-align:middle;">{{ . }}</span>
+      {{- end }}
+    </h2>
+  </header>
+  {{- if (ne (.Param "hideSummary") true) }}
+  <div class="entry-content">
+    <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
+  </div>
+  {{- end }}
+  <footer class="entry-footer">
+    {{- partial "post_meta.html" . -}}
+  </footer>
+  <a class="entry-link" aria-label="post link to {{ .Title | plainify }}" href="{{ .Permalink }}"></a>
+</article>
+{{- end }}
+{{- end }}
+
+{{- if $homelab }}
+<h2 class="section-prompt"><span class="p">~/</span><span class="path">homelab</span> <span class="p">$</span> ls -lt | head</h2>
+{{- range first 6 $homelab }}
+<article class="post-entry">
+  {{- $isHidden := (.Param "cover.hiddenInList") | default (.Param "cover.hidden") | default false }}
+  {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
+  <header class="entry-header">
+    <h2>{{ .Title }}</h2>
+  </header>
+  {{- if (ne (.Param "hideSummary") true) }}
+  <div class="entry-content">
+    <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
+  </div>
+  {{- end }}
+  <footer class="entry-footer">
+    {{- partial "post_meta.html" . -}}
+  </footer>
+  <a class="entry-link" aria-label="post link to {{ .Title | plainify }}" href="{{ .Permalink }}"></a>
+</article>
+{{- end }}
+{{- end }}
+
+{{- if $cheats }}
+<h2 class="section-prompt"><span class="p">~/</span><span class="path">cheats</span> <span class="p">$</span> ls -lt | head</h2>
+{{- range first 6 $cheats }}
+<article class="post-entry">
+  <header class="entry-header"><h2>{{ .Title }}</h2></header>
+  {{- if (ne (.Param "hideSummary") true) }}
+  <div class="entry-content"><p>{{ .Summary | plainify | htmlUnescape }}</p></div>
+  {{- end }}
+  <footer class="entry-footer">{{- partial "post_meta.html" . -}}</footer>
+  <a class="entry-link" aria-label="post link to {{ .Title | plainify }}" href="{{ .Permalink }}"></a>
+</article>
+{{- end }}
+{{- else }}
+<h2 class="section-prompt"><span class="p">~/</span><span class="path">cheats</span> <span class="p">$</span> ls</h2>
+<article class="post-entry" style="padding:18px;">
+  <div class="entry-content" style="opacity:0.75;">
+    <p><code>// nothing here yet — coming soon</code></p>
+  </div>
+</article>
+{{- end }}
+
+{{- end }}{{/* end main */}}

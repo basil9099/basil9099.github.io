@@ -1,0 +1,34 @@
+{{- /* Renders a "box info" terminal-style card on writeup pages.
+       Only renders when at least one of: difficulty, platform, os, points,
+       series is set in frontmatter. */ -}}
+{{- $diff := .Params.difficulty }}
+{{- $platform := .Params.platform }}
+{{- $os := .Params.os }}
+{{- $points := .Params.points }}
+{{- $series := index .Params.series 0 }}
+{{- if or $diff $platform $os $points $series }}
+<aside class="boxinfo" aria-label="writeup info">
+  <div class="boxinfo-header">
+    <span class="dots">● ● ●</span>
+    <span>cat ./{{ .File.LogicalName | default "writeup.md" }}</span>
+    <span>{{ .Date.Format "2006-01-02" }}</span>
+  </div>
+  <div class="boxinfo-body">
+    {{- with $platform }}
+    <div class="boxinfo-row"><span class="boxinfo-key">platform</span><span class="boxinfo-val">{{ . }}</span></div>
+    {{- end }}
+    {{- with $diff }}
+    <div class="boxinfo-row"><span class="boxinfo-key">difficulty</span><span class="boxinfo-val"><span class="difficulty-pill {{ . | lower }}">{{ . }}</span></span></div>
+    {{- end }}
+    {{- with $os }}
+    <div class="boxinfo-row"><span class="boxinfo-key">os</span><span class="boxinfo-val">{{ . }}</span></div>
+    {{- end }}
+    {{- with $points }}
+    <div class="boxinfo-row"><span class="boxinfo-key">points</span><span class="boxinfo-val">{{ . }}</span></div>
+    {{- end }}
+    {{- with $series }}
+    <div class="boxinfo-row"><span class="boxinfo-key">series</span><span class="boxinfo-val">{{ . }}</span></div>
+    {{- end }}
+  </div>
+</aside>
+{{- end }}
