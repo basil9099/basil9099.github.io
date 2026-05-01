@@ -5,9 +5,9 @@ author: "Basil9099"
 tags: ["HTB","Windows","Active Directory","BloodHound","Kerberos","DCSync","Impacket","nxc","Privilege Escalation"]
 categories: ["CTF Writeups"]
 summary: "Provided creds → BloodHound ACL chain (Olivia → Michael → Benjamin) → FTP .psafe3 backup → Emily → Ethan DCSync → Administrator NTLM → SYSTEM via psexec.py."
-images: ["/images/administrator/administrator.webp"]
+images: ["/images/administrator/administrator.png"]
 cover:
-  image: "/images/administrator/administrator.webp"
+  image: "/images/administrator/administrator.png"
   alt: "Administrator HTB image"
   caption: "Administrator - CTF - Hack The Box"
   relative: true
@@ -106,7 +106,7 @@ MICHAEL --[ForceChangePassword]-->  BENJAMIN
 
 The chain is the intended foothold ladder — abuse `ForceChangePassword` twice to land as **Benjamin**, who has access we don't.
 
-![BloodHound graph: Olivia → Michael → Benjamin](/images/administrator/bloodhound_path.png)
+![BloodHound graph: Olivia → Michael → Benjamin](/images/administrator/Bloodhound.png)
 
 ---
 
