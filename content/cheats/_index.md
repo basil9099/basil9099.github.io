@@ -4,5 +4,3 @@ description: "Practical reference material for testing and studying."
 ---
 
 Quick reference notes for tools, commands, and techniques I reach for often.
-
-> No entries here yet — first cheat sheets are on the way.
