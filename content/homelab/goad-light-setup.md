@@ -66,7 +66,10 @@ python -m venv .env
 python goad.py -m vm
 ```
 
+<!-- TODO: add screenshot — GOAD repository cloned successfully
 ![GOAD repository cloned successfully](/images/homelab/goad-light/repo_cloned.png)
+-->
+
 
 ---
 
@@ -85,7 +88,7 @@ Running `config` in the GOAD management console shows the current settings and
 the merged `goad.ini`, confirming the VMware provider, `vm` provisioner, and the
 `192.168.56` IP range are active:
 
-![GOAD config output showing current settings and goad.ini](/images/homelab/goad-light/goad_config.png)
+![GOAD config output showing current settings and goad.ini](/images/homelab/goad-light/config.png)
 
 ---
 
@@ -134,12 +137,7 @@ File "C:\Labs\GOAD\goad\provider\ludus\ludus.py", line 43, in __init__
 TypeError: WindowsCommand.is_in_path() takes 2 positional arguments but 3 were given
 ```
 
-Even once the console loaded, it repeatedly logged `ludus not found in PATH`
-while trying to initialize the provider it should never have been using:
-
-![GOAD launcher traceback while loading the Ludus provider](/images/homelab/goad-light/goad_ludus_traceback.png)
-
-![GOAD console repeatedly reporting ludus not found in PATH](/images/homelab/goad-light/goad_ludus_path.png)
+![GOAD launcher crashing while loading the Ludus provider](/images/homelab/goad-light/console-ludus-error.png)
 
 **Resolution**
 
@@ -169,6 +167,12 @@ This stopped GOAD from trying to initialize Ludus. The working setup used:
 I also verified the VMware provider (`vagrant-vmware-desktop`) was installed
 correctly as part of getting the lab running.
 
+With Ludus disabled, the console loads to the GOAD management prompt. It still
+prints a few `ludus not found in PATH` notices, but no longer crashes and
+reaches the shell:
+
+![GOAD console loading successfully to the management prompt](/images/homelab/goad-light/console-works.png)
+
 ---
 
 ### 3. Missing Vagrant Plugin
@@ -183,7 +187,7 @@ were all present):
 Missing vagrant plugin vagrant-reload
 ```
 
-![GOAD check output showing the missing vagrant-reload plugin](/images/homelab/goad-light/goad_check.png)
+![GOAD check output showing the missing vagrant-reload plugin](/images/homelab/goad-light/check-missing-plugin.png)
 
 **Resolution**
 
@@ -219,7 +223,10 @@ Subnet:  192.168.56.0/24
 DHCP:    Disabled
 ```
 
+<!-- TODO: add screenshot — VMware Virtual Network Editor
 ![VMware Virtual Network Editor](/images/homelab/goad-light/vmware_network_editor.png)
+-->
+
 
 ---
 
@@ -237,7 +244,10 @@ This confirmed:
 - Internet connectivity
 - Host-only network connectivity
 
+<!-- TODO: add screenshot — ip addr output on the provisioning VM
 ![ip addr output on the provisioning VM](/images/homelab/goad-light/ip_addr.png)
+-->
+
 
 ---
 
