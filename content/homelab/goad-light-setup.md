@@ -92,11 +92,6 @@ python -m venv .env
 python goad.py -m vm
 ```
 
-<!-- TODO: add screenshot — GOAD repository cloned successfully
-![GOAD repository cloned successfully](/images/homelab/goad-light/repo_cloned.png)
--->
-
-
 ---
 
 ## GOAD Configuration
@@ -267,9 +262,7 @@ Subnet:  192.168.56.0/24
 DHCP:    Disabled
 ```
 
-<!-- TODO: add screenshot — VMware Virtual Network Editor
-![VMware Virtual Network Editor](/images/homelab/goad-light/vmware_network_editor.png)
--->
+![VMware Virtual Network Editor with VMnet2 set to host-only on 192.168.56.0/24 and DHCP disabled](/images/homelab/goad-light/vmware-network-editor.png)
 
 
 ---
@@ -287,11 +280,6 @@ This confirmed:
 
 - Internet connectivity
 - Host-only network connectivity
-
-<!-- TODO: add screenshot — ip addr output on the provisioning VM
-![ip addr output on the provisioning VM](/images/homelab/goad-light/ip_addr.png)
--->
-
 
 ---
 
