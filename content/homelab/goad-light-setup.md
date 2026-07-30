@@ -67,9 +67,7 @@ spraying, LLMNR/NTLM relay, a range of ACL abuses (ForceChangePassword,
 GenericWrite, WriteDACL, WriteOwner, GenericAll), GPO abuse, MSSQL
 impersonation, and credentials stashed in an LDAP description.
 
-<!-- TODO: add screenshot — GOAD-Light README (servers, domains, scenarios)
-![GOAD-Light README overview](/images/homelab/goad-light/readme-overview.png)
--->
+![GOAD-Light README overview](/images/homelab/goad-light/goad_light-content.png)
 
 ---
 
@@ -153,9 +151,7 @@ ships with `aws`, `azure`, `ludus`, `proxmox`, `virtualbox`, `vmware`, and
 `vmware_esxi`. On this installation it tried to initialize the **Ludus**
 provider even though the lab was being deployed locally with VMware Workstation.
 
-<!-- TODO: add screenshot — dir .\providers listing
-![GOAD providers directory listing](/images/homelab/goad-light/providers-list.png)
--->
+![GOAD providers directory listing](/images/homelab/goad-light/goad_light-content2.png)
 
 
 Launching the console crashed while loading providers, tracing straight through
@@ -258,9 +254,7 @@ ssh: connect to host 192.168.56.3 port 22: Connection timed out
 Because VMnet2 had no valid host-only address, the `192.168.56.3` provisioning
 host was simply unreachable.
 
-<!-- TODO: add screenshot — build.yml provisioning failing with SSH timeouts
-![Provisioning aborting on SSH connection timeouts](/images/homelab/goad-light/provisioning-ssh-timeout.png)
--->
+![Provisioning aborting on SSH connection timeouts](/images/homelab/goad-light/ssh_error.png)
 
 **Resolution**
 
