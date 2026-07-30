@@ -45,6 +45,32 @@ hardware I already own.
 
 ---
 
+## Inside GOAD-Light
+
+GOAD-Light is a cut-down version of the full GOAD lab. It drops the `essos`
+domain (so no cross-forest exploitation or MSSQL trusted links) and removes some
+of the heavier scenarios such as ZeroLogon, PetitPotam unauthenticated, and
+ADCS ESC2/ESC3/ESC4 — keeping it lighter to run while still being a realistic
+multi-host Active Directory target.
+
+The lab is made up of three Windows Server 2019 VMs across two domains:
+
+| Host | Role | Domain | Notes |
+|------|------|--------|-------|
+| kingslanding | DC01 | `sevenkingdoms.local` | Root domain DC (Defender on) |
+| winterfell | DC02 | `north.sevenkingdoms.local` | Child domain DC (Defender on) |
+| castelblack | SRV02 | member server | IIS, MSSQL, SMB share (Defender off) |
+
+The users and groups ship with deliberate misconfigurations, which map directly
+to the techniques I want to practise — AS-REP roasting, Kerberoasting, password
+spraying, LLMNR/NTLM relay, a range of ACL abuses (ForceChangePassword,
+GenericWrite, WriteDACL, WriteOwner, GenericAll), GPO abuse, MSSQL
+impersonation, and credentials stashed in an LDAP description.
+
+![GOAD-Light README overview](/images/homelab/goad-light/goad_light-content.png)
+
+---
+
 ## Initial Setup
 
 Installed the following components:
@@ -65,11 +91,6 @@ python -m venv .env
 .\.env\Scripts\Activate.ps1
 python goad.py -m vm
 ```
-
-<!-- TODO: add screenshot — GOAD repository cloned successfully
-![GOAD repository cloned successfully](/images/homelab/goad-light/repo_cloned.png)
--->
-
 
 ---
 
@@ -120,10 +141,13 @@ to talk to VMware Workstation.
 
 **Problem**
 
-The newer GOAD installer supports multiple providers (VMware, VirtualBox,
-Proxmox, Azure, AWS, Ludus, and others). On this installation it tried to
-initialize the **Ludus** provider even though the lab was being deployed
-locally with VMware Workstation.
+The newer GOAD installer supports multiple providers — the `providers` folder
+ships with `aws`, `azure`, `ludus`, `proxmox`, `virtualbox`, `vmware`, and
+`vmware_esxi`. On this installation it tried to initialize the **Ludus**
+provider even though the lab was being deployed locally with VMware Workstation.
+
+![GOAD providers directory listing](/images/homelab/goad-light/goad_light-content2.png)
+
 
 Launching the console crashed while loading providers, tracing straight through
 `LudusProvider`:
@@ -212,6 +236,21 @@ Provisioning repeatedly failed. Windows showed:
 for the VMnet2 adapter instead of the expected GOAD subnet — an APIPA address,
 meaning the adapter had no valid host-only network configuration.
 
+The downstream effect showed up during provisioning: Ansible ran `build.yml`
+over SSH to the provisioning VM at `192.168.56.3`, but every connection timed
+out and the run aborted:
+
+```text
+ssh: connect to host 192.168.56.3 port 22: Connection timed out
+[-] 3 fails abort.
+[-] Something wrong during the provisioning task : build.yml
+```
+
+Because VMnet2 had no valid host-only address, the `192.168.56.3` provisioning
+host was simply unreachable.
+
+![Provisioning aborting on SSH connection timeouts](/images/homelab/goad-light/ssh_error.png)
+
 **Resolution**
 
 Recreated and reconfigured the VMware host-only network in the Virtual Network
@@ -223,9 +262,7 @@ Subnet:  192.168.56.0/24
 DHCP:    Disabled
 ```
 
-<!-- TODO: add screenshot — VMware Virtual Network Editor
-![VMware Virtual Network Editor](/images/homelab/goad-light/vmware_network_editor.png)
--->
+![VMware Virtual Network Editor with VMnet2 set to host-only on 192.168.56.0/24 and DHCP disabled](/images/homelab/goad-light/vmware-network-editor.png)
 
 
 ---
@@ -243,11 +280,6 @@ This confirmed:
 
 - Internet connectivity
 - Host-only network connectivity
-
-<!-- TODO: add screenshot — ip addr output on the provisioning VM
-![ip addr output on the provisioning VM](/images/homelab/goad-light/ip_addr.png)
--->
-
 
 ---
 
