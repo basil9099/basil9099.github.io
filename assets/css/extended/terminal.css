@@ -352,6 +352,7 @@ hr {
 
 .boxinfo-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
 }
@@ -359,6 +360,8 @@ hr {
 .boxinfo-key {
     color: var(--accent-dim);
     opacity: 0.85;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .boxinfo-key::after {
