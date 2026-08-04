@@ -169,11 +169,7 @@ Ollama, and kicked off recon analysis against the target:
 
 And got:
 
-```text
-No findings — nothing to interpret.   (Model: qwen3:8b)
-```
-
-![The BugHunter interpretation output reporting no findings](/images/homelab/local-ai-bug-bounty-lab/no-findings.png)
+![The BugHunter interpretation output reporting no findings — nothing to interpret, model qwen3:8b](/images/homelab/local-ai-bug-bounty-lab/no-findings.png)
 
 Everything *worked*. That was the trap. BugHunter is built for internet-facing
 domains and probes the web **root**; my ClassicPress install lived at a
