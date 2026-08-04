@@ -128,10 +128,7 @@ usually in the source, not in a forum thread.
 
 First real run, I checked `ollama ps` mid-execution:
 
-```text
-NAME        SIZE   PROCESSOR      CONTEXT
-qwen3:14b   14 GB  31%/69% CPU/GPU  32768
-```
+![ollama ps showing qwen3:14b split 31%/69% CPU/GPU at a 32K context](/images/homelab/local-ai-bug-bounty-lab/cpu-gpu_split_qwen.webp)
 
 `31%/69% CPU/GPU` means the model wasn't fully on the GPU — nearly a third of it
 had spilled onto the CPU, which craters throughput. The cause was the `CONTEXT`
@@ -156,12 +153,6 @@ on the GPU:
 For "read this pile of recon output and reason about it," context beat raw
 capability. I made the tool select the 8B by adjusting its model-priority list,
 kept the full context, and re-checked `ollama ps`:
-
-```text
-qwen3:8b   ~6 GB   100% GPU   32768
-```
-
-![ollama ps showing qwen3:14b split 31%/69% CPU/GPU at a 32K context](/images/homelab/local-ai-bug-bounty-lab/cpu-gpu_split_qwen.webp)
 
 ![ollama ps showing qwen3:8b running 100% GPU at the full 32K context](/images/homelab/local-ai-bug-bounty-lab/gpu-100.png)
 
