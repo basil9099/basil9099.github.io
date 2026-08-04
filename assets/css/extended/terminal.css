@@ -293,6 +293,7 @@ hr {
     letter-spacing: 0.05em;
     text-transform: uppercase;
     border: 1px solid currentColor;
+    white-space: nowrap;
 }
 
 .difficulty-pill.easy {
