@@ -71,9 +71,7 @@ are separate machines on purpose — you never test from the same box you're
 attacking, and a deliberately-vulnerable target should never be reachable from
 anywhere it shouldn't be.
 
-<!-- screenshot: topology / ollama running
-![Ollama running on the Windows host](/images/homelab/local-ai-bug-bounty-lab/ollama-running.png)
--->
+![Ollama on the Windows host listing the installed Qwen 3 models](/images/homelab/local-ai-bug-bounty-lab/ollama_list.png)
 
 ---
 
@@ -104,9 +102,9 @@ I scoped the Windows firewall rule to the VM subnet only (`remoteip=<nat-subnet>
 not `Any` — the Ollama endpoint has **no authentication**, so an open port there
 is a genuine exposure, not a lab convenience.
 
-<!-- screenshot: netstat before/after
-![netstat showing the listener bound to 127.0.0.1, then to 0.0.0.0](/images/homelab/local-ai-bug-bounty-lab/netstat.png)
--->
+![netstat before: the listener bound to 127.0.0.1:11434](/images/homelab/local-ai-bug-bounty-lab/netstat_before.webp)
+
+![netstat after the proper restart: the listener bound to 0.0.0.0:11434 in the Local column](/images/homelab/local-ai-bug-bounty-lab/netstat_after.png)
 
 **Lesson:** know your VM networking, and don't trust a config change until you've
 verified the actual listening state — not the command's exit code.
@@ -163,9 +161,9 @@ kept the full context, and re-checked `ollama ps`:
 qwen3:8b   ~6 GB   100% GPU   32768
 ```
 
-<!-- screenshot: ollama ps 31/69 split, then 100% GPU
-![ollama ps showing the 31%/69% CPU/GPU split, then 100% GPU after switching models](/images/homelab/local-ai-bug-bounty-lab/ollama-ps.png)
--->
+![ollama ps showing qwen3:14b split 31%/69% CPU/GPU at a 32K context](/images/homelab/local-ai-bug-bounty-lab/cpu-gpu_split_qwen.webp)
+
+![ollama ps showing qwen3:8b running 100% GPU at the full 32K context](/images/homelab/local-ai-bug-bounty-lab/gpu-100.png)
 
 **Lesson:** measure, don't assume. And the "best" model isn't the biggest one —
 it's the one that fits the workload's real constraint, which here was context,
@@ -173,11 +171,18 @@ not parameters.
 
 ### 4. A clean pipeline pointed at nothing
 
-With the model behaving, I ran the hunt — and got:
+With the model behaving, I ran the hunt — the brain came online, connected to
+Ollama, and kicked off recon analysis against the target:
+
+![BugHunter connecting to Ollama and starting recon analysis against the target with qwen3:8b](/images/homelab/local-ai-bug-bounty-lab/bughunter_output-ai-model.png)
+
+And got:
 
 ```text
 No findings — nothing to interpret.   (Model: qwen3:8b)
 ```
+
+![The BugHunter interpretation output reporting no findings](/images/homelab/local-ai-bug-bounty-lab/no-findings.png)
 
 Everything *worked*. That was the trap. BugHunter is built for internet-facing
 domains and probes the web **root**; my ClassicPress install lived at a
@@ -195,9 +200,9 @@ AH00112: Warning: DocumentRoot [/var/www/html/classicpress/classicpress] does no
 A doubled path — I'd run a `sed` substitution twice. Set it explicitly, reload,
 `curl -I` returns `200`, site loads.
 
-<!-- screenshot: the 404, the error.log line, the fixed 200
-![The 404 page, the Apache error log line, and the fixed 200 response](/images/homelab/local-ai-bug-bounty-lab/documentroot-fix.png)
--->
+![curl -I returning HTTP/1.1 404 Not Found from the target](/images/homelab/local-ai-bug-bounty-lab/404.webp)
+
+![curl -I returning HTTP/1.1 200 OK, with the wp-json Link header confirming the CMS is serving from the web root](/images/homelab/local-ai-bug-bounty-lab/200-lamp.png)
 
 **Lesson:** a successful run against the wrong target is worse than an error,
 because it's silent. Always confirm the tool is looking at what you think it is.
