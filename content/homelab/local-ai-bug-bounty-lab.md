@@ -1,5 +1,5 @@
 ---
-title: "Building a Local-AI Bug Bounty Lab — and Where the AI Lied to Me"
+title: "Building a Local-AI Bug Bounty Lab — and Where I Learned Not to Trust It"
 date: 2026-08-04
 author: "Basil9099"
 tags: ["homelab","ai","ollama","qwen","bug-bounty","recon","classicpress","kali","vmware"]
@@ -7,18 +7,17 @@ categories: ["Homelab"]
 series: ["Homelab Labs"]
 difficulty: "Intermediate"
 platform: "Local Homelab"
-summary: "Wiring an AI-driven recon tool to a self-hosted LLM on my own GPU, driving it from a Kali attack VM against a ClassicPress target on an isolated network — cross-host inference, a VRAM wall, a silent clean run against the wrong target, and the recurring lesson that a local model is a lead-generator, not an oracle."
+summary: "Wiring an AI-driven recon tool to a self-hosted LLM on my own GPU, driving it from a Kali attack VM against a ClassicPress target on a segment I control — cross-host inference, a VRAM wall, a silent clean run against the wrong target, and the recurring lesson that a local model is a lead-generator, not an oracle."
 ---
 
 > **Homelab note**
 > This post documents an AI-assisted bug bounty lab built entirely on hardware I
-> own, against a target I built myself, on an isolated network. The interesting
-> part isn't "AI finds bugs" — it's the engineering judgment, and the places the
-> model would have misled me if I'd trusted it.
+> own, against a target I built myself, on a network segment I control. The
+> interesting part isn't "AI finds bugs" — it's the engineering judgment, and the
+> places the model would have misled me if I'd trusted it.
 
-*Running an AI-driven recon tool on a self-hosted LLM, on isolated hardware,
-against a target I built myself — and treating the model as a suspect, not an
-oracle.*
+*Running an AI-driven recon tool on a self-hosted LLM, on hardware I own, against
+a target I built myself — and treating the model as a suspect, not an oracle.*
 
 ---
 
@@ -26,7 +25,7 @@ oracle.*
 
 I wired up an AI-assisted bug bounty tool (BugHunter) to a **local** LLM
 (Qwen 3 on Ollama) running on my own GPU, connected it from a Kali attack VM,
-and pointed it at a self-hosted ClassicPress target on an isolated network. The
+and pointed it at a self-hosted ClassicPress target on a segment I control. The
 interesting part wasn't "AI finds bugs" — it was everything that broke on the
 way, and the recurring lesson that a local model is a fast, tireless
 *lead-generator* whose output you verify by hand, not a source of truth. This
@@ -55,8 +54,7 @@ building a workflow I could reason about end to end.
 
 ## The architecture
 
-Three machines, fully isolated on a VMware NAT network so nothing touches my
-real LAN or the internet-facing world:
+Three machines on a VMware NAT segment:
 
 ```text
   Windows host (RTX 4070, 12 GB) ── Ollama :11434 (Qwen 3, on the GPU)
@@ -64,6 +62,13 @@ real LAN or the internet-facing world:
         ├── Kali VM ...... ATTACKER  (BugHunter, wpscan, nuclei)
         └── Ubuntu 24.04 .. TARGET   (LAMP + ClassicPress 2.7.0)
 ```
+
+Worth being precise about what NAT does and doesn't buy me, because it's easy to
+overclaim here: the target isn't reachable from my LAN or inbound from the
+internet, but NAT still gives the VMs *outbound* access. That's deliberate — I
+want package updates and tool installs to work — but it isn't isolation in the
+strict sense. Host-only would cut outbound too, at the cost of making the build
+significantly more painful.
 
 Inference runs on the Windows GPU; the Kali box just orchestrates tools and
 talks to Ollama over the network. No GPU passthrough needed. Attacker and target
@@ -101,6 +106,13 @@ restart it read `0.0.0.0:11434` on the left, and Kali could reach it.
 I scoped the Windows firewall rule to the VM subnet only (`remoteip=<nat-subnet>/24`),
 not `Any` — the Ollama endpoint has **no authentication**, so an open port there
 is a genuine exposure, not a lab convenience.
+
+There's a tighter option I'd take next time: rather than binding to `0.0.0.0` and
+relying on a firewall rule to fence it off, bind Ollama directly to the VMnet8
+host adapter address (`OLLAMA_HOST=192.168.x.1:11434`). Then the listener never
+exists on the LAN-facing interface at all, and the firewall rule becomes a second
+layer rather than the only one. For an unauthenticated endpoint that's the
+difference between one control and two.
 
 ![netstat before: the listener bound to 127.0.0.1:11434](/images/homelab/local-ai-bug-bounty-lab/netstat_before.webp)
 
@@ -184,10 +196,10 @@ error log was unambiguous:
 AH00112: Warning: DocumentRoot [/var/www/html/classicpress/classicpress] does not exist
 ```
 
+![curl -I returning HTTP/1.1 404 Not Found from the target](/images/homelab/local-ai-bug-bounty-lab/404.webp)
+
 A doubled path — I'd run a `sed` substitution twice. Set it explicitly, reload,
 `curl -I` returns `200`, site loads.
-
-![curl -I returning HTTP/1.1 404 Not Found from the target](/images/homelab/local-ai-bug-bounty-lab/404.webp)
 
 ![curl -I returning HTTP/1.1 200 OK, with the wp-json Link header confirming the CMS is serving from the web root](/images/homelab/local-ai-bug-bounty-lab/200-lamp.png)
 
@@ -197,7 +209,7 @@ And read the logs — they usually just tell you.
 
 ---
 
-## Where the AI helped, and where it lied
+## Where the AI helped, and where it would have misled me
 
 This is the part I care about most, because the honest version is more useful
 than the hype.
@@ -209,7 +221,7 @@ than the hype.
 - Drafting — notes, structure, first-pass write-ups — where I'm the editor.
 - Bounded, human-in-the-loop tasks where I can immediately sanity-check it.
 
-**Where it lied, or would have if I'd trusted it:**
+**Where it would have misled me, if I'd taken it at face value:**
 
 - **Confident false positives.** The triage/validation step will wave things
   through as "findings" that don't hold up. Treated as a verdict, that's a
@@ -230,7 +242,11 @@ that doesn't.
 ## What I'd tell someone building this
 
 - Run inference where the GPU is; orchestrate from your attack box; keep them
-  separate machines on an isolated network.
+  separate machines on a segment nothing else can reach.
+- Be precise about what your network setup actually gives you. NAT keeps the
+  target unreachable from outside but still allows outbound; host-only cuts both.
+  Claiming more isolation than you have is the easiest thing in the world to get
+  called on.
 - Verify listening state and connectivity explicitly — don't trust exit codes.
 - Read the tool's source. Model choice and context window are usually just
   constants you can tune.
@@ -243,22 +259,27 @@ that doesn't.
 
 ## Scope & ethics
 
-Everything here ran against a target I built, on an isolated network I own. No
-live systems, no third-party programs, no real client data. Automated,
-"autonomous" security tooling acts without pausing to ask — so it only ever gets
-pointed at in-scope bounty targets or gear I control. Knowing what *not* to point
-it at is part of the skill set.
+Everything here ran against a target I built myself, on a network segment I
+control and that nothing outside it can reach. No live systems, no third-party
+programs, no real client data. Automated, "autonomous" security tooling acts
+without pausing to ask — so it only ever gets pointed at in-scope bounty targets
+or gear I control. Knowing what *not* to point it at is part of the skill set.
 
 ---
 
 ## Tools & credits
 
-- **BugHunter** by shuvonsec — the AI-driven recon/hunting framework.
-- **Ollama** + **Qwen 3** (8B / 14B) — local inference.
-- **ClassicPress 2.7.0** — WordPress-lineage CMS, used as a self-hosted target.
-- **wpscan**, **nuclei** — the purpose-built CMS tooling I lean on for the actual
-  hunting (a WordPress-fork target is their home turf, path and all).
-- **VMware Workstation** — the isolated lab.
+- [**BugHunter**](https://github.com/shuvonsec/claude-bug-bounty) by shuvonsec —
+  the AI-driven recon/hunting framework.
+- [**Ollama**](https://ollama.com) + [**Qwen 3**](https://ollama.com/library/qwen3)
+  (8B / 14B) — local inference.
+- [**ClassicPress**](https://www.classicpress.net) 2.7.0 — WordPress-lineage CMS,
+  used as a self-hosted target.
+- [**wpscan**](https://github.com/wpscanteam/wpscan),
+  [**nuclei**](https://github.com/projectdiscovery/nuclei) — the purpose-built CMS
+  tooling I lean on for the actual hunting (a WordPress-fork target is their home
+  turf, path and all).
+- **VMware Workstation** — the lab itself.
 
 *Next up: enumerating the CMS properly with wpscan/nuclei — including an
 installed plugin I spotted on the target, since plugin code is where the real
