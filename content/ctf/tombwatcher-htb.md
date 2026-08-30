@@ -103,13 +103,13 @@ The user list surfaces the cast we'll work through: `henry`, `alfred`, `sam`, `j
 
 ## BloodHound: henry → Alfred (WriteSPN)
 
-Import the zip into BloodHound CE and mark `henry` as **Owned**. The interesting outbound edge is:
+Import the zip into BloodHound CE and mark `henry` as **Owned**. The outbound edge that matters is:
 
 ```text
 HENRY --[WriteSPN]--> ALFRED
 ```
 
-`WriteSPN` lets `henry` write the `servicePrincipalName` attribute on the `alfred` user object. Alfred is **not** kerberoastable today — but if we plant an SPN on the account we can request a TGS for it, get back a hash encrypted with Alfred's password-derived key, and crack it offline. This is the **targeted Kerberoasting** primitive.
+`WriteSPN` lets `henry` write the `servicePrincipalName` attribute on the `alfred` user object. Alfred isn't kerberoastable today, but if we plant an SPN on the account we can request a TGS for it, get back a hash encrypted with Alfred's password-derived key, and crack it offline. That's the **targeted Kerberoasting** primitive.
 
 ![BloodHound WriteSPN edge from Henry to Alfred](/images/tombwatcher/bloodhound_writeSPN.webp)
 
@@ -148,7 +148,7 @@ Re-running BloodHound with `alfred` marked Owned shows the next edge:
 ALFRED --[AddSelf]--> INFRASTRUCTURE  (group)
 ```
 
-`AddSelf` is the narrowest possible group-write right — Alfred can add **only himself** to the group, nothing else. That's enough, because the group itself holds the privilege we actually want.
+`AddSelf` is the narrowest possible group-write right. Alfred can add only himself to the group, nothing else. That's enough, because the group itself holds the privilege we want.
 
 ```bash
 bloodyad --host dc01.tombwatcher.htb -d tombwatcher.htb \
@@ -221,7 +221,7 @@ nxc smb DC01.tombwatcher.htb -u sam -p 'Password123!'
 
 ## Sam → John (WriteOwner)
 
-BloodHound's next outbound edge from `sam` is **WriteOwner** onto `john`. WriteOwner doesn't let you reset the password directly — it lets you make yourself the object owner, after which you can grant yourself the missing rights. `bloodyad` exposes the first half as `set owner`:
+BloodHound's next outbound edge from `sam` is **WriteOwner** onto `john`. WriteOwner doesn't let you reset the password directly. It makes you the object owner, after which you can grant yourself the missing rights. `bloodyad` exposes the first half as `set owner`:
 
 ```bash
 bloodyad -d tombwatcher.htb -u sam -p 'Password123!' \
@@ -272,13 +272,13 @@ The user flag is on John's desktop:
 
 ![User flag from John's desktop](/images/tombwatcher/user-flag.png)
 
-We'll keep this PowerShell session — it's the cleanest way to reanimate the tombstoned `cert_admin` object next.
+We'll keep this PowerShell session; it's the cleanest way to reanimate the tombstoned `cert_admin` object next.
 
 ---
 
 ## Reanimating the tombstoned cert_admin
 
-John's outbound rights look unremarkable at first — until you check the **OU** edges. BloodHound shows:
+John's outbound rights look unremarkable until you check the OU edges. BloodHound shows:
 
 ```text
 JOHN --[GenericAll]--> OU=ADCS,DC=tombwatcher,DC=htb
@@ -305,7 +305,7 @@ Name              : cert_admin
 SamAccountName    : cert_admin
 ```
 
-A reanimated object comes back **without a usable password** — but John's `GenericAll` on the parent OU is inherited onto the restored child, so we can set one in the same shell:
+A reanimated object comes back without a usable password, but John's `GenericAll` on the parent OU is inherited onto the restored child, so we can set one in the same shell:
 
 ```powershell
 Set-ADAccountPassword cert_admin -NewPassword `
@@ -326,7 +326,7 @@ nxc smb DC01.tombwatcher.htb -u cert_admin -p 'P@ssword123!'
 
 ## AD CS recon: WebServer template (ESC15)
 
-`cert_admin` exists for a reason — it has enrolment rights inside the CA. Enumerate templates with Certipy:
+`cert_admin` has enrolment rights inside the CA, which is the whole reason it exists. Enumerate templates with Certipy:
 
 ```bash
 certipy-ad find -u cert_admin -p 'P@ssword123!' \
