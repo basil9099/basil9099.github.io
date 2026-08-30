@@ -40,7 +40,7 @@ cover:
 
 ## Reconnaissance
 
-I started with a straightforward service scan to identify active services and versions:
+I started with a service scan to identify running services and versions:
 
 ```bash
 sudo nmap -sC -sV -oN initial 10.129.245.40

