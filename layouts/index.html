@@ -29,12 +29,21 @@
   </div>
 </section>
 
-{{- $featured := where site.RegularPages "Params.featured" true }}
+{{- /* Curated, not chronological: order comes from featured_weight in
+       frontmatter so the strongest writeup leads regardless of date.
+       A featured post with no weight defaults to 99 and sorts last, so
+       forgetting the field can never displace the lead card. */ -}}
+{{- $weighted := slice }}
+{{- range where site.RegularPages "Params.featured" true }}
+  {{- $weighted = $weighted | append (dict "page" . "weight" (.Params.featured_weight | default 99)) }}
+{{- end }}
+{{- $featured := sort $weighted "weight" }}
 {{- if $featured }}
 <section class="featured" aria-label="featured work">
   <h2 class="section-heading">Selected work</h2>
   <div class="featured-grid">
     {{- range first 3 $featured }}
+    {{- with .page }}
     <a class="featured-card" href="{{ .Permalink }}">
       <h3>{{ .Title }}</h3>
       <p>{{ .Summary | plainify | htmlUnescape | truncate 150 }}</p>
@@ -43,6 +52,7 @@
         {{ .ReadingTime }} min read
       </span>
     </a>
+    {{- end }}
     {{- end }}
   </div>
 </section>

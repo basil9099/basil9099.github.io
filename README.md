@@ -35,6 +35,20 @@ scripts/           # Build/verification scripts (verify-site.sh)
 
 ---
 
+## Featured Work
+
+The homepage "Selected work" strip shows three curated posts, chosen by
+frontmatter rather than by date:
+
+```yaml
+featured: true
+featured_weight: 1   # 1 sorts first; lower wins
+```
+
+Order comes from `featured_weight`, so the strongest writeup leads no matter
+when it was published. A post marked `featured: true` without a weight
+defaults to 99 and sorts last, so it can never displace the lead card.
+
 ## Running Locally
 
 ```bash

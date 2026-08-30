@@ -8,6 +8,7 @@ difficulty: "Medium"
 platform: "Hack The Box"
 os: "Windows"
 featured: true
+featured_weight: 1
 summary: "A Windows domain box where a chain of small misconfigurations adds up to full control, ending in an Active Directory certificate template flaw. Henry → targeted Kerberoast on Alfred → AddSelf to INFRASTRUCTURE → ReadGMSAPassword on ansible_dev$ → Sam → John → WinRM pivot → reanimate tombstoned cert_admin via John's GenericAll on OU=ADCS → ESC15 (CVE-2024-49019) on the WebServer template → Administrator."
 images: ["/images/tombwatcher/Tombwatcher.webp"]
 cover:

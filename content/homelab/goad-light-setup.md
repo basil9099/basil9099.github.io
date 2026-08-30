@@ -8,6 +8,7 @@ series: ["Homelab Labs"]
 difficulty: "Intermediate"
 platform: "Local Homelab"
 featured: true
+featured_weight: 2
 summary: "Setting up Game of Active Directory (GOAD-Light) on Windows 11 with VMware Workstation and Vagrant — and the real story behind it: troubleshooting the VMware utility, the launcher's provider bug, a missing plugin, host-only networking, and provisioning failures that stood between me and a working AD lab."
 ---
 

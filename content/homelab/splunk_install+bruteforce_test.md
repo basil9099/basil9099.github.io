@@ -7,6 +7,7 @@ categories: ["Homelab"]
 platform: "Local Homelab"
 difficulty: "Intermediate"
 featured: true
+featured_weight: 3
 summary: "Centralised logging and detection engineering in my Windows homelab using Splunk Enterprise and Universal Forwarders."
 ---
 
