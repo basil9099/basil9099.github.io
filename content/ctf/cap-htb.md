@@ -122,7 +122,7 @@ cat /root/root.txt
 
 ## 🔑 Takeaways
 
-IDORs can expose sensitive artifacts (PCAPs, backups) — always check object enumeration endpoints like /data/<id>.
+IDORs can expose sensitive artifacts (PCAPs, backups) — always check object enumeration endpoints like `/data/<id>`.
 
 PCAP analysis with Wireshark is invaluable for recovering plaintext credentials when services are unencrypted (FTP/HTTP basic auth).
 
