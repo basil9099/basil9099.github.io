@@ -1,9 +1,12 @@
 ---
 title: "Splunk Enterprise — Windows Homelab Deployment"
 date: 2025-09-18
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["homelab","splunk","windows","logging","detection","uf","siem"]
 categories: ["Homelab"]
+platform: "Local Homelab"
+difficulty: "Intermediate"
+featured: true
 summary: "Centralised logging and detection engineering in my Windows homelab using Splunk Enterprise and Universal Forwarders."
 ---
 

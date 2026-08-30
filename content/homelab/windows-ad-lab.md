@@ -1,9 +1,11 @@
 ---
 title: "Windows Server with Active Directory (AD) — Homelab"
 date: 2025-09-18
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["homelab","active-directory","windows","ad","lab"]
 categories: ["Homelab"]
+platform: "Local Homelab"
+difficulty: "Easy"
 summary: "Overview of my Active Directory homelab: domain setup, users, security exercises, and next steps for monitoring and detection."
 ---
 

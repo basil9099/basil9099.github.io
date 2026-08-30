@@ -1,10 +1,13 @@
 ---
 title: "Cap — HackTheBox Writeup"
 date: 2025-09-18
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["HTB", "Linux", "PCAP", "Privilege Escalation", "capabilities"]
 categories: ["CTF Writeups"]
-summary: "IDOR → PCAP recovery of credentials → SSH user shell → Linux file capabilities (getcap) → root via python3.8 capability."
+difficulty: "Easy"
+platform: "Hack The Box"
+os: "Linux"
+summary: "A web app that leaks another user's traffic capture, and a Linux privilege feature left too permissive. IDOR → PCAP recovery of credentials → SSH user shell → Linux file capabilities (getcap) → root via python3.8 capability."
 images: ["/images/cap/cap.webp"]
 cover:
   image: "/images/cap/cap.webp"

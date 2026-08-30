@@ -1,5 +1,6 @@
 baseURL: "https://basil9099.github.io/"
 title: "Angus Dawson — Homelab & CTFs"
+description: "Active Directory attack paths, homelab builds, and detection engineering — CTF writeups and lab notes by Angus Dawson, Sydney."
 languageCode: "en-us"
 theme: "PaperMod"
 pagination:
@@ -11,8 +12,12 @@ taxonomies:
   series: series
 
 params:
+  author: "Angus Dawson"
+  description: "Active Directory attack paths, homelab builds, and detection engineering — CTF writeups and lab notes by Angus Dawson, Sydney."
+  keywords: ["penetration testing", "active directory", "hack the box", "homelab", "detection engineering", "cybersecurity"]
+  images: ["/images/og-default.png"]
+  ShowWordCount: false
   defaultTheme: dark
-  disableThemeToggle: true
   ShowPostNavLinks: true
   ShowShareButtons: true
   ShowCodeCopyButtons: true
@@ -24,14 +29,14 @@ params:
     - ctf
     - homelab
     - cheats
-  homeInfoParams:
-    Title: "Homelab & CTF Writeups"
-    Content: "eJPT • HTB/THM • AD labs • Cheat sheets"
   assets:
     favicon: "/favicon.svg"
 
 menu:
   main:
+    - name: About
+      url: /about/
+      weight: 5
     - name: CTFs
       url: /ctf/
       weight: 10
@@ -41,6 +46,9 @@ menu:
     - name: Cheats
       url: /cheats/
       weight: 30
+    - name: Search
+      url: /search/
+      weight: 40
 
 outputs:
   home: ["HTML", "RSS", "JSON"]   # JSON enables PaperMod search

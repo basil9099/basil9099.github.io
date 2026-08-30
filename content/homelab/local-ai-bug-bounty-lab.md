@@ -1,7 +1,7 @@
 ---
 title: "Building a Local-AI Bug Bounty Lab — and Where I Learned Not to Trust It"
 date: 2026-08-04
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["homelab","ai","ollama","qwen","bug-bounty","recon","classicpress","kali","vmware"]
 categories: ["Homelab"]
 series: ["Homelab Labs"]

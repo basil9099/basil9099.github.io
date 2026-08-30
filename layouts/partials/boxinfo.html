@@ -5,7 +5,8 @@
 {{- $platform := .Params.platform }}
 {{- $os := .Params.os }}
 {{- $points := .Params.points }}
-{{- $series := index .Params.series 0 }}
+{{- $series := "" }}
+{{- with .Params.series }}{{ $series = index . 0 }}{{ end }}
 {{- if or $diff $platform $os $points $series }}
 <aside class="boxinfo" aria-label="writeup info">
   <div class="boxinfo-header">

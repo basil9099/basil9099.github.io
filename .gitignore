@@ -2,3 +2,12 @@
 public/
 resources/
 .hugo_build.lock
+
+# Brainstorming session artifacts
+.superpowers/
+
+# Verification build output
+.verify-build/
+
+# Local-only forbidden-terms list (may contain private strings)
+scripts/forbidden-terms.local

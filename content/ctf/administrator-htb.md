@@ -1,10 +1,13 @@
 ---
 title: "Administrator — HackTheBox Writeup"
 date: 2026-04-28
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["HTB","Windows","Active Directory","BloodHound","Kerberos","DCSync","Impacket","nxc","hashcat","Kerberoasting","Privilege Escalation"]
 categories: ["CTF Writeups"]
-summary: "Olivia → BloodHound ACL chain (ForceChangePassword) → Benjamin → FTP .psafe3 → hashcat → password spray to Emily → targetedKerberoast on Ethan → DCSync Administrator."
+difficulty: "Medium"
+platform: "Hack The Box"
+os: "Windows"
+summary: "Mapping an Active Directory domain with BloodHound, then walking the permission chain it exposes from a low-privilege account to domain administrator. Olivia → BloodHound ACL chain (ForceChangePassword) → Benjamin → FTP .psafe3 → hashcat → password spray to Emily → targetedKerberoast on Ethan → DCSync Administrator."
 images: ["/images/administrator/administrator.png"]
 cover:
   image: "/images/administrator/administrator.png"

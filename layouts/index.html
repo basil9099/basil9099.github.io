@@ -1,32 +1,52 @@
 {{- define "main" }}
 
-<section class="terminal-hero" aria-label="intro">
-  <div class="terminal-hero-bar">
-    <span class="traffic">● ● ●</span>
-    <span>angus@homelab: ~</span>
-    <span>zsh</span>
-  </div>
-  <div class="terminal-hero-body">
-    <div>
-      <span class="prompt">┌──(</span><span class="user">angus</span>@<span class="host">homelab</span><span class="prompt">)-[</span><span class="host">~</span><span class="prompt">]</span>
-    </div>
-    <div>
-      <span class="prompt">└─$</span> <span class="cmd">whoami</span>
-      <span class="out">angus — security learner • homelab tinkerer • CTF player</span>
-    </div>
-    <div>
-      <span class="prompt">└─$</span> <span class="cmd">cat /etc/motd</span>
-      <span class="out">{{ site.Params.homeInfoParams.Content | default "eJPT • HTB/THM • AD labs • Cheat sheets" }}</span>
-    </div>
-    <div>
-      <span class="prompt">└─$</span> <span class="cmd">ls writeups/</span>
-      <span class="out">ctf/ &nbsp; homelab/ &nbsp; cheats/</span>
-    </div>
-    <div>
-      <span class="prompt">└─$</span><span class="cursor"></span>
-    </div>
+<section class="intro" aria-label="introduction">
+  <h1 class="intro-name">Angus Dawson</h1>
+  <p class="intro-role">
+    Active Directory attack paths, lab building, and detection — working
+    toward a first role in penetration testing.
+  </p>
+  <p class="intro-meta">Sydney, Australia · eJPT · Google Cybersecurity Certificate · studying CPTS</p>
+  <div class="intro-links">
+    <a class="btn btn-primary" href="/about/">About me</a>
+    <a class="btn" href="https://www.linkedin.com/in/angus-dawson-92b035249/" rel="me noopener">LinkedIn</a>
+    <a class="btn" href="https://github.com/basil9099" rel="me noopener">GitHub</a>
   </div>
 </section>
+
+<section class="capabilities" aria-label="what I work on">
+  <div class="cap">
+    <h2>Active Directory attack paths</h2>
+    <p>Mapping how a foothold in a Windows domain becomes full control — across single machines and across multi-host networks in the Dante and P.O.O. Pro Labs.</p>
+  </div>
+  <div class="cap">
+    <h2>Building the labs</h2>
+    <p>Standing up the domains, servers, and networks I test against — including the parts that break, and what it took to fix them.</p>
+  </div>
+  <div class="cap">
+    <h2>Detection engineering</h2>
+    <p>Instrumenting those same labs with centralised logging, then checking whether the attacks I just ran actually show up.</p>
+  </div>
+</section>
+
+{{- $featured := where site.RegularPages "Params.featured" true }}
+{{- if $featured }}
+<section class="featured" aria-label="featured work">
+  <h2 class="section-heading">Selected work</h2>
+  <div class="featured-grid">
+    {{- range first 3 $featured }}
+    <a class="featured-card" href="{{ .Permalink }}">
+      <h3>{{ .Title }}</h3>
+      <p>{{ .Summary | plainify | htmlUnescape | truncate 150 }}</p>
+      <span class="featured-meta">
+        {{- with .Params.difficulty }}<span class="difficulty-pill {{ . | lower }}">{{ . }}</span>{{ end }}
+        {{ .ReadingTime }} min read
+      </span>
+    </a>
+    {{- end }}
+  </div>
+</section>
+{{- end }}
 
 {{- $ctf := where site.RegularPages "Section" "ctf" }}
 {{- $homelab := where site.RegularPages "Section" "homelab" }}

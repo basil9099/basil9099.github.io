@@ -1,7 +1,11 @@
 ---
 title: "Phishing simulation — GoPhish lab guide"
 date: "2025-09-20"
+author: "Angus Dawson"
 tags: ["phishing","gophish","social-engineering","lab"]
+categories: ["Homelab"]
+platform: "Local Homelab"
+difficulty: "Intermediate"
 draft: false
 summary: "Step-by-step lab guide to run a safe phishing simulation using GoPhish and SET (Social-Engineer Toolkit). For isolated lab environments only."
 ---

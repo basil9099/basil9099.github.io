@@ -3,8 +3,12 @@ title: "Foothold & Privilege Escalation — Optimum (HFS)"
 date: 2025-10-12T12:00:00+11:00
 draft: false
 author: "Angus Dawson"
-categories: ["HTB", "writeup", "pentest"]
+categories: ["CTF Writeups"]
 tags: ["HFS", "CVE-2014-6287", "metasploit", "privilege-escalation"]
+difficulty: "Easy"
+platform: "Hack The Box"
+os: "Windows"
+summary: "A Windows box that falls to a known file-server vulnerability, then to a kernel-level privilege escalation. Rejetto HFS 2.3 RCE (CVE-2014-6287) for a foothold, then local exploit enumeration to SYSTEM."
 images: ["/images/optimum/optimum-ctf.png"]
 cover:
   image: "/images/optimum/optimum-ctf.png"

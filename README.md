@@ -1,12 +1,14 @@
 # Angus Dawson — Homelab & CTF Blog
 
-A personal cybersecurity blog built with [Hugo](https://gohugo.io/) and the [PaperMod](https://github.com/adityatelange/hugo-PaperMod) theme.
+A personal cybersecurity blog and portfolio built with [Hugo](https://gohugo.io/) and the [PaperMod](https://github.com/adityatelange/hugo-PaperMod) theme.
 
 The blog covers:
 
-- **CTF Writeups** — Step-by-step walkthroughs of retired Hack The Box and TryHackMe machines, with emphasis on methodology and key takeaways.
+- **CTF Writeups** — Step-by-step walkthroughs of retired Hack The Box machines, with emphasis on methodology and key takeaways.
 - **Homelab Documentation** — Notes from Active Directory labs, Kerberos troubleshooting, detection experiments, and other hands-on projects.
 - **Cheat Sheets** — Practical reference material for use when testing or studying.
+
+It also includes an About page and site search.
 
 ---
 
@@ -19,12 +21,15 @@ The blog covers:
 ## Repository Structure
 
 ```
-content/           # Blog posts (Markdown)
+content/           # Blog posts and pages (Markdown)
 ├── ctf/           # CTF writeups
 ├── homelab/       # Homelab notes
-└── cheats/        # Quick references
+├── cheats/        # Quick references
+├── about.md       # About page
+└── search.md      # Search page
 static/images/     # Screenshots and diagrams
 themes/            # PaperMod theme (git submodule)
+scripts/           # Build/verification scripts (verify-site.sh)
 .github/           # GitHub Actions workflow for Pages
 ```
 
@@ -41,6 +46,9 @@ cd basil9099.github.io
 hugo server -D
 
 # Open http://localhost:1313
+
+# Check the build and the copy rules
+bash scripts/verify-site.sh
 ```
 
 ---

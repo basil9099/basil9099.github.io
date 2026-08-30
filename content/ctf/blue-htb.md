@@ -1,10 +1,13 @@
 ---
 title: "Blue (HTB) — Walkthrough"
 date: 2025-09-17
+author: "Angus Dawson"
 tags: ["htb","windows","smb","ms17-010","privesc"]
 series: ["Hack The Box — retired"]
+categories: ["CTF Writeups"]
 difficulty: "Easy"
 platform: "Hack The Box"
+os: "Windows"
 summary: "Exploiting MS17-010 (EternalBlue) on a Windows 7 SP1 target. Recon, SMB enumeration, exploitation, and proof of SYSTEM access."
 images: ["/images/blue/blue.webp"]
 cover:

@@ -1,12 +1,13 @@
 ---
 title: "GOAD-Light — Building & Troubleshooting an Active Directory Pentest Lab"
 date: 2026-07-29
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["homelab","active-directory","goad","vagrant","vmware","kerberos","pentest"]
 categories: ["Homelab"]
 series: ["Homelab Labs"]
 difficulty: "Intermediate"
 platform: "Local Homelab"
+featured: true
 summary: "Setting up Game of Active Directory (GOAD-Light) on Windows 11 with VMware Workstation and Vagrant — and the real story behind it: troubleshooting the VMware utility, the launcher's provider bug, a missing plugin, host-only networking, and provisioning failures that stood between me and a working AD lab."
 ---
 

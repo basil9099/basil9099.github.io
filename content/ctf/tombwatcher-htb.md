@@ -1,10 +1,14 @@
 ---
 title: "TombWatcher — HackTheBox Writeup"
 date: 2026-04-29
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["HTB","Windows","Active Directory","BloodHound","Kerberos","Kerberoasting","gMSA","AD CS","ESC15","CVE-2024-49019","Tombstone","Privilege Escalation"]
 categories: ["CTF Writeups"]
-summary: "Henry → targeted Kerberoast on Alfred → AddSelf to INFRASTRUCTURE → ReadGMSAPassword on ansible_dev$ → Sam → John → WinRM pivot → reanimate tombstoned cert_admin via John's GenericAll on OU=ADCS → ESC15 (CVE-2024-49019) on the WebServer template → Administrator."
+difficulty: "Medium"
+platform: "Hack The Box"
+os: "Windows"
+featured: true
+summary: "A Windows domain box where a chain of small misconfigurations adds up to full control, ending in an Active Directory certificate template flaw. Henry → targeted Kerberoast on Alfred → AddSelf to INFRASTRUCTURE → ReadGMSAPassword on ansible_dev$ → Sam → John → WinRM pivot → reanimate tombstoned cert_admin via John's GenericAll on OU=ADCS → ESC15 (CVE-2024-49019) on the WebServer template → Administrator."
 images: ["/images/tombwatcher/Tombwatcher.webp"]
 cover:
   image: "/images/tombwatcher/Tombwatcher.webp"

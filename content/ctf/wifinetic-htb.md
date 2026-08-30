@@ -1,10 +1,13 @@
 ---
 title: "Wifinetic — HackTheBox Writeup"
 date: 2025-09-18
-author: "Basil9099"
+author: "Angus Dawson"
 tags: ["HTB","OpenWrt","embedded","ftp","pcap","wps","reaver","privsec"]
 categories: ["CTF Writeups"]
-summary: "Anonymous FTP → backup extraction → credential reuse (SSH) → local wireless enumeration → WPS PIN attack (reaver) → root via local escalation."
+difficulty: "Easy"
+platform: "Hack The Box"
+os: "Linux"
+summary: "An exposed backup gives up a reused password, and the box's own wireless hardware provides the route to root. Anonymous FTP → backup extraction → credential reuse (SSH) → local wireless enumeration → WPS PIN attack (reaver) → root via local escalation."
 images: ["/images/wifinetic/wifinetic.webp"]
 cover:
   image: "/images/wifinetic/wifinetic.webp"
