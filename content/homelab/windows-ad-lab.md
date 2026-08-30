@@ -9,14 +9,14 @@ difficulty: "Easy"
 summary: "Overview of my Active Directory homelab: domain setup, users, security exercises, and next steps for monitoring and detection."
 ---
 
-> 🖥️ **Homelab note**
+> **Homelab note**
 > This post documents the Windows Server with Active Directory environment I use for training, testing, and detection exercises.
 
 ---
 
 ## Overview
 
-I run a fully configured **Windows Server** acting as an **Active Directory (AD)** domain controller in my cybersecurity homelab. The environment simulates a realistic enterprise domain and is used for practicing penetration testing techniques, AD security administration, and detection exercises.
+I run a fully configured **Windows Server** acting as an **Active Directory (AD)** domain controller in my cybersecurity homelab. The environment mirrors a realistic enterprise domain, and I use it to practise penetration testing, AD security administration, and detection exercises.
 
 ---
 
@@ -100,7 +100,7 @@ klist
 Get-ADDomain
 Get-ADUser -Filter * -Properties MemberOf | Select sAMAccountName, MemberOf
 ```
-# Next steps / roadmap
+## Next steps / roadmap
 
 Planned improvements to the lab:
 
@@ -112,13 +112,13 @@ Planned improvements to the lab:
 
 - Deploy additional network services (Exchange, file servers) for richer attack surfaces.
 
-# Notes & safe-use reminders
+## Notes & safe-use reminders
 
 This environment is for authorized testing only. Don’t run these exercises against production networks or systems you don’t own.
 
 Take snapshots or backups before performing offensive tests to ensure you can restore the lab quickly.
 
-# Resources
+## Resources
 
 - Microsoft Docs: Active Directory overview
 

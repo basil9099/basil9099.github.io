@@ -14,9 +14,9 @@ summary: "Setting up Game of Active Directory (GOAD-Light) on Windows 11 with VM
 
 > **Homelab note**
 > This post documents how I set up GOAD-Light as an Active Directory pentesting
-> lab — and, more importantly, the troubleshooting it took to actually get it
-> provisioning. The build was largely automated, but several issues needed
-> hands-on debugging before the lab came up.
+> lab, and the troubleshooting it took to actually get it provisioning. The
+> build was largely automated, but several issues needed hands-on debugging
+> before the lab came up.
 
 ---
 
@@ -24,9 +24,9 @@ summary: "Setting up Game of Active Directory (GOAD-Light) on Windows 11 with VM
 
 [GOAD (Game of Active Directory)](https://github.com/Orange-Cyberdefense/GOAD)
 is a vulnerable Active Directory environment built for practising offensive AD
-techniques. I chose **GOAD-Light** — a trimmed-down version of the full lab —
-because it delivers a realistic multi-host AD environment while requiring fewer
-hardware resources than the full GOAD lab.
+techniques. I chose **GOAD-Light**, a trimmed-down version of the full lab,
+because it gives a realistic multi-host AD environment while needing fewer
+hardware resources.
 
 The goal was a local lab I could use to practise AD enumeration, privilege
 escalation, lateral movement, BloodHound analysis, and Kerberos attacks, all on
@@ -52,7 +52,7 @@ hardware I already own.
 GOAD-Light is a cut-down version of the full GOAD lab. It drops the `essos`
 domain (so no cross-forest exploitation or MSSQL trusted links) and removes some
 of the heavier scenarios such as ZeroLogon, PetitPotam unauthenticated, and
-ADCS ESC2/ESC3/ESC4 — keeping it lighter to run while still being a realistic
+ADCS ESC2/ESC3/ESC4, so it runs lighter while still being a realistic
 multi-host Active Directory target.
 
 The lab is made up of three Windows Server 2019 VMs across two domains:
@@ -235,8 +235,8 @@ Provisioning repeatedly failed. Windows showed:
 169.254.x.x
 ```
 
-for the VMnet2 adapter instead of the expected GOAD subnet — an APIPA address,
-meaning the adapter had no valid host-only network configuration.
+for the VMnet2 adapter instead of the expected GOAD subnet. That's an APIPA
+address, which meant the adapter had no valid host-only network configuration.
 
 The downstream effect showed up during provisioning: Ansible ran `build.yml`
 over SSH to the provisioning VM at `192.168.56.3`, but every connection timed
@@ -332,8 +332,7 @@ At the time of writing, `provision_lab` is successfully provisioning:
 
 ## Lessons Learned
 
-Building an automated Active Directory lab involved considerably more
-troubleshooting than expected.
+Building the lab took far more troubleshooting than I expected.
 
 Key takeaways included:
 
@@ -346,9 +345,8 @@ Key takeaways included:
 - Managing Linux guest storage
 - Reading and interpreting infrastructure logs
 
-Although initially frustrating, resolving each issue significantly improved my
-understanding of the underlying infrastructure rather than simply relying on
-automation.
+It was frustrating at the time, but resolving each issue taught me more about
+the infrastructure than a clean automated run ever would have.
 
 ---
 
@@ -370,5 +368,3 @@ Once provisioning is complete, the lab will be used to practise:
 - [GOAD — Orange Cyberdefense](https://github.com/Orange-Cyberdefense/GOAD)
 - [Vagrant VMware provider documentation](https://developer.hashicorp.com/vagrant/docs/providers/vmware)
 - VMware Workstation host-only networking reference
-
-<!-- More notes to be added -->

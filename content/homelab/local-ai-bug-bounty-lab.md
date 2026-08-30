@@ -26,9 +26,9 @@ against a target I built. I treated the model as a suspect, not as an oracle.*
 
 I set up an AI-assisted bug bounty tool called BugHunter, connecting it to a
 **local** LLM (Qwen 3 on Ollama) on my GPU. I did this from a Kali attack VM and
-pointed it at a self-hosted ClassicPress target on a segment I control. The
-fascinating part wasn't the hunting itself; it was everything that went wrong
-along the way. The recurring lesson is that a local model is a fast, tireless
+pointed it at a self-hosted ClassicPress target on a segment I control.
+Everything that went wrong along the way taught me more than the hunting itself.
+The recurring lesson is that a local model is a fast, tireless
 *lead generator* whose output you must manually verify, not a source of truth.
 This write-up focuses on engineering judgment, not a magic-button demo.
 
@@ -48,10 +48,10 @@ lab, I purposely chose to do the opposite for three reasons:
   don't understand. A local model with clear limitations forces me to review
   every step, which builds the skills I want.
 
-A local model, around 14B, is significantly weaker than a leading cloud model
-when it comes to multi-step reasoning, and on consumer hardware you have limits
-on context. I wasn't after the best output; I was establishing a workflow I could
-understand from start to finish.
+A local model around 14B is much weaker than a leading cloud model at
+multi-step reasoning, and on consumer hardware you're limited on context. I
+wasn't after the best output; I was establishing a workflow I could understand
+from start to finish.
 
 ---
 
@@ -66,9 +66,8 @@ Three machines on a VMware NAT segment:
         └── Ubuntu 24.04 .. TARGET   (LAMP + ClassicPress 2.7.0)
 ```
 
-It's important to clarify what NAT does and does not provide, as it's easy to
-misrepresent: the target isn't reachable from my LAN or from the internet, but
-NAT does give the VMs outbound access. That's intentional, because I want package
+NAT is easy to misrepresent, so to be exact: the target isn't reachable from my
+LAN or from the internet, but NAT does give the VMs outbound access. That's intentional, because I want package
 updates and tool installations to work, but it doesn't provide strict isolation.
 Choosing host-only would limit outbound access, making the setup more
 complicated.
@@ -85,7 +84,7 @@ reachable from where it shouldn't be.
 
 ## The build — and what actually broke
 
-I won't cover the parts that went smoothly. The value lies in the challenges.
+I won't cover the parts that went smoothly. The problems are the interesting part.
 
 ### 1. Getting cross-host inference to work
 
@@ -156,9 +155,9 @@ The quick math: a 32K KV cache for that model is around ~5 GB. Add the 9.3 GB of
 weights, and you exceed the ~11 GB of usable VRAM, leading Ollama to offload
 layers to system RAM. That's what caused the spillover.
 
-The interesting decision was how to fix this. The obvious solution — reduce the
-context to 8K so the 14B model fits — is actually wrong for my workload.
-BugHunter's analysis phase requires the complete recon dump for reasoning.
+The fix wasn't obvious. Reducing the context to 8K so the 14B model fits is
+actually wrong for my workload: BugHunter's analysis phase requires the
+complete recon dump for reasoning.
 Cutting the window to 8K means the model can't see half the data. So I chose to
 switch to the **8B** model, which can handle the full 32K window entirely on the
 GPU:
@@ -218,8 +217,7 @@ answers.
 
 ## Where the AI helped and where it would have misled me
 
-This is the part that is most important to me, because the honest perspective is
-more valuable than the hype.
+The honest version matters more to me than the hype.
 
 **Where a local model genuinely helped:**
 

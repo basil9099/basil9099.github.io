@@ -11,7 +11,7 @@ featured_weight: 3
 summary: "Centralised logging and detection engineering in my Windows homelab using Splunk Enterprise and Universal Forwarders."
 ---
 
-> 🛡️ **Splunk Enterprise — Windows Homelab**  
+> **Splunk Enterprise — Windows Homelab**  
 > Centralised logging + detection engineering for the Cybersecurity Homelab.
 
 ---
@@ -80,7 +80,7 @@ Dashboard example (Windows VM Security) shows:
 
 ---
 
-## 🔐 Brute-Force Detection Simulation (Kali → Windows → Splunk)
+## Brute-Force Detection Simulation (Kali → Windows → Splunk)
 
 **Goal:** Simulate failed logins from Kali to a Windows 10 host and verify logging, forwarding and detection in Splunk.
 
@@ -134,7 +134,7 @@ index=wineventlog EventCode=4625
 
 ---
 
-## ✅ Summary & Next Steps
+## Summary & Next Steps
 
 - Logs from Windows hosts ingested successfully. 
 - Dashboards and queries validated visibility of relevant event types. 
@@ -142,7 +142,7 @@ index=wineventlog EventCode=4625
 
 ---
 
-## 🔗 References
+## References
 - Splunk Universal Forwarder docs 
 - Splunk App for Windows Infrastructure 
 - re: Windows Event IDs (particularly 4625) 
