@@ -1,5 +1,5 @@
 ---
-title: "Homelab & CTF Writeups"
+title: "Angus Dawson — Homelab & CTF Writeups"
 description: "Active Directory attack paths, homelab builds, and detection engineering — CTF writeups and lab notes by Angus Dawson, Sydney."
 ---
 
