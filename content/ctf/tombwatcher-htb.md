@@ -20,11 +20,9 @@ cover:
 
 ---
 
-> ⚠️ **Spoiler warning**: This covers a retired HTB machine. This writeup documents my playthrough of the retired Hack The Box machine **TombWatcher**.
+> **Spoiler warning**: This writeup documents my playthrough of the retired Hack The Box machine **TombWatcher**.
 
 The VPN IPs shown below are the HTB-assigned VPN addresses used during the box (left intact here for reproducibility). Do not attempt this on non-authorised or active systems.
-
-# TombWatcher (HTB) — Walkthrough
 
 ## Overview
 - **Platform:** Hack The Box (retired)

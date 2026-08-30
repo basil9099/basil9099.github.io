@@ -19,8 +19,6 @@ cover:
 
 ---
 
-
-# Foothold & Privilege Escalation — Optimum (HTB-style)
 **Author:** Angus Dawson  
 **Target:** `10.129.245.40` (lab box)  
 **Attacker:** `10.10.14.29` (Kali)
@@ -53,8 +51,6 @@ Key output (trimmed):
 ```
 
 ![Nmap ports output](/images/optimum/nmap.png)
-
-
 
 Because HFS 2.3 was present, I searched for known vulnerabilities and found **CVE-2014-6287** (RCE against HFS).  
 
