@@ -14,4 +14,5 @@ Code and raw notes are available on GitHub — posts link back where relevant.
 
 - [CTFs](/ctf/)
 - [Homelab](/homelab/)
+- [Projects](/projects/)
 - [Cheats](/cheats/)

@@ -28,6 +28,7 @@ params:
   mainSections:
     - ctf
     - homelab
+    - projects
     - cheats
   assets:
     favicon: "/favicon.svg"
@@ -43,6 +44,9 @@ menu:
     - name: Homelab
       url: /homelab/
       weight: 20
+    - name: Projects
+      url: /projects/
+      weight: 25
     - name: Cheats
       url: /cheats/
       weight: 30

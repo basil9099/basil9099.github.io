@@ -60,6 +60,7 @@
 
 {{- $ctf := where site.RegularPages "Section" "ctf" }}
 {{- $homelab := where site.RegularPages "Section" "homelab" }}
+{{- $projects := where site.RegularPages "Section" "projects" }}
 {{- $cheats := where site.RegularPages "Section" "cheats" }}
 
 {{- if $ctf }}
@@ -97,6 +98,33 @@
   {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
   <header class="entry-header">
     <h2>{{ .Title }}</h2>
+  </header>
+  {{- if (ne (.Param "hideSummary") true) }}
+  <div class="entry-content">
+    <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
+  </div>
+  {{- end }}
+  <footer class="entry-footer">
+    {{- partial "post_meta.html" . -}}
+  </footer>
+  <a class="entry-link" aria-label="post link to {{ .Title | plainify }}" href="{{ .Permalink }}"></a>
+</article>
+{{- end }}
+{{- end }}
+
+{{- if $projects }}
+<h2 class="section-prompt"><span class="p">~/</span><span class="path">projects</span> <span class="p">$</span> ls -lt | head</h2>
+{{- range first 6 $projects }}
+<article class="post-entry">
+  {{- $isHidden := (.Param "cover.hiddenInList") | default (.Param "cover.hidden") | default false }}
+  {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">
+      {{- .Title -}}
+      {{- with .Params.difficulty }}
+      <span class="difficulty-pill {{ . | lower }}" style="margin-left:10px;font-size:0.55em;vertical-align:middle;">{{ . }}</span>
+      {{- end }}
+    </h2>
   </header>
   {{- if (ne (.Param "hideSummary") true) }}
   <div class="entry-content">
