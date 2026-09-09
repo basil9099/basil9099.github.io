@@ -56,7 +56,7 @@ The idea is old. For a hidden process, kdetect asks four ways:
 - **syscall sweep** — call `kill(pid, 0)` for every possible task id. That
   answers from the kernel's task table, not from a directory.
 - **direct read** — read `/proc/<tid>/status` by path. `/proc/<pid>` answers even
-  when readdir refuses to list it, and it yields identity, not just existence.
+  when readdir refuses to list it, and it returns identity as well as existence.
 - **socket ownership** — attribute open sockets back to owning pids through
   `/proc/<pid>/fd`.
 
@@ -67,9 +67,8 @@ hook ownership are three channels a module has to suppress on its own.
 
 Two design rules fell out of this and shaped everything else. Snapshots hold
 evidence, never conclusions. And disagreement between channels stays
-representable rather than being resolved at capture time. If two collectors
-contradict each other, both answers get written down and the analysis stage
-decides later.
+representable; nothing is resolved at capture time. If two collectors contradict
+each other, both answers get written down and the analysis stage decides later.
 
 ## Building a lab you can make claims about
 
@@ -77,21 +76,21 @@ Every finding kdetect produces is a claim about how a machine differs from clean
 That claim is worth exactly as much as your knowledge of what clean looked like.
 
 I started phase 1 on a prebuilt Debian image off the internet. That was fine
-while nothing was being detected, but it went into the limitations log on day one
-as L1: a third-party image with documented default credentials and passwordless
-sudo cannot tell you what uncompromised looks like. Before writing a single
-detector I rebuilt the VM from `debian-12.12.0-amd64-netinst.iso`, verified the
-OpenPGP signature on the hash file rather than just the hash, and recorded the
-result in the repo.
+while nothing was being detected, but it went into the limitations log on day
+one as L1: a third-party image with documented default credentials and
+passwordless sudo cannot tell you what uncompromised looks like. Before writing
+a single detector I rebuilt the VM from `debian-12.12.0-amd64-netinst.iso`,
+checked the hash and then the OpenPGP signature on the hash file, and recorded
+the result in the repo.
 
 ```bash
 gpg --keyring /usr/share/keyrings/debian-role-keys.gpg --verify SHA256SUMS.sign SHA256SUMS
 ```
 
 A `Good signature` line is the difference between trusting a certificate
-authority and trusting Debian. Netinst rather than the full DVD, deliberately: it
-installs only what you ask for, so the machine stays small enough that you can
-plausibly account for every package on it.
+authority and trusting Debian. Netinst was deliberate: it installs only what you
+ask for, so the machine stays small enough that you can plausibly account for
+every package on it.
 
 The rest of the lab discipline is unglamorous and non-negotiable. Snapshot before
 loading anything live. Switch the adapter to host-only *before* the rootkit
@@ -140,7 +139,7 @@ enormous and entirely legitimate. The discriminator is `initstate`.
 And `/proc/kallsyms` carries bracketed owner tags that look like module names but
 aren't. `[bpf]` shows up with no module behind it.
 
-Neither is exciting. Both would have produced confident nonsense.
+Neither is exciting, and both would have produced confident nonsense.
 
 ### The detector I deleted
 
@@ -175,8 +174,8 @@ actually works — and that's deferred rather than faked.
 
 ![The same clean capture re-analysed after the signal was removed, reporting findings: none](/images/projects/kdetect/clean_after_signal_removed.png)
 
-Tuning a threshold would have kept the feature and hidden the problem. Deleting
-it was the honest option.
+Tuning a threshold would have kept the feature and hidden the problem, so
+deleting it was the honest option.
 
 ## Proving it on a real rootkit
 
@@ -247,9 +246,8 @@ no listed module wearing the marker.
 
 `kdetect capture` needs a live `/proc` and so runs on Linux only. Analysis,
 reporting and redaction work on the JSON anywhere, which means you can capture on
-the suspect host and analyse somewhere you trust. Exit codes are scriptable: 3
-means findings, 0 means none, and a non-zero exit is a detection rather than a
-crash.
+the suspect host and analyse somewhere you trust. Exit codes are scriptable: 0
+means no findings, 3 means findings, and neither one indicates a crash.
 
 ## Confidence is a corroboration count
 
@@ -262,28 +260,28 @@ The reporting layer concludes nothing of its own. It presents what the analysis
 found, and every line traces back to a finding or a recorded fact. Indicators of
 compromise are extracted separately, and only for things that travel: a module
 name, a hooked syscall, a C2 endpoint. Pids and inodes are host-local, so they
-stay as context rather than being handed to someone as an IOC that can't mean
-anything on their machine.
+stay as context. Handing someone a pid as an IOC gives them a number that can't
+mean anything on their machine.
 
 Baselines are ordinary snapshots plus a detached ed25519 signature, verified
-before parsing rather than after.
+before parsing.
 
 ## What it can't detect
 
 The limitations document runs to 26 numbered entries, each traced to captured
-evidence in the repo rather than asserted. The shape of them:
+evidence in the repo. The shape of them:
 
-**Cross-view finds inconsistency, not malice.** A rootkit that patches every view
+Cross-view finds inconsistency, not malice. A rootkit that patches every view
 coherently, or one operating below the level kdetect can see, produces no
 disagreement and therefore no finding. This is the load-bearing limitation and no
 amount of extra channels removes it.
 
-**kdetect runs on the machine it's inspecting**, parsing input that a
+kdetect runs on the machine it's inspecting, parsing input that a
 kernel-level attacker can influence. On-host signing bounds the problem without
 solving it. Off-host verification is future work, and I'd rather say that than
 imply the current design is tamper-proof.
 
-**Some evidence is simply gone.** A hidden process's `exe` and `cmdline` can't be
+Some evidence is simply gone. A hidden process's `exe` and `cmdline` can't be
 recovered, because the collector that records them is the readdir path the
 rootkit suppressed. A report identifies it by `comm`, `tgid` and the sockets it
 owns, and says plainly that the rest is unavailable. That's a property of the
@@ -297,15 +295,13 @@ implemented as a constraint on what kdetect is allowed to read. One is planned.
 Spec-first, in phases, with AI assistance, and the specs and implementation plans
 are committed under `docs/superpowers/` if you want to check the working.
 
-The discipline that made that productive rather than dangerous is the step-0
-habit described above: gather evidence about the real system before designing
-anything, and trace every limitation to a capture. A model will happily produce a
-detector that looks correct. Only the clean machine can tell you it fires ninety
-times on nothing.
+What made that productive was the step-0 habit described above: gather evidence
+about the real system before designing anything, and trace every limitation to a
+capture. A model will happily produce a detector that looks correct. Only the
+clean machine can tell you it fires ninety times on nothing.
 
 Both rootkits are pinned as committed fixtures with a test each, so a refactor
-that quietly stops detecting Diamorphine fails the suite rather than passing
-quietly:
+that breaks Diamorphine detection fails the suite:
 
 ![pytest running tests/unit/test_ground_truth.py with 9 tests passed, including test_infected_diamorphine_detects_hidden_module and test_clean_phase2_has_zero_findings](/images/projects/kdetect/ground_truth_tests.png)
 
@@ -313,11 +309,11 @@ The clean captures are in there too. A detector that finds nothing is useless,
 but a detector that finds something on a clean box is worse, so both directions
 are asserted.
 
-There's a second guardrail worth mentioning. Python 3.11 is the floor and it's
-enforced by a test, because a 3.12-only construct once passed the entire suite on
-my 3.12 workstation and broke on import on the 3.11 lab VM. Environment drift
-between where you write code and where you run it is a bug class, so I made it a
-test rather than a habit.
+One more guardrail: Python 3.11 is the floor, enforced by a test, because a
+3.12-only construct once passed the entire suite on my 3.12 workstation and
+broke on import on the 3.11 lab VM. Environment drift between where you write
+code and where you run it is a bug class, so I made it a test rather than a
+habit.
 
 ## Links
 
