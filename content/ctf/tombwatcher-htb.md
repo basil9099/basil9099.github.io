@@ -266,7 +266,7 @@ The user flag is on John's desktop:
 *Evil-WinRM* PS C:\Users\john\Desktop> type user.txt
 ```
 
-`<user-flag-here>`
+`3ef5c52247581299367dbb65c4d36214`
 
 ![User flag from John's desktop](/images/tombwatcher/user-flag.png)
 
@@ -405,7 +405,7 @@ evil-winrm -i 10.129.232.167 -u 'administrator' -p 'P@ssword123!'
 *Evil-WinRM* PS C:\Users\Administrator\Documents> type ..\desktop\root.txt
 ```
 
-`<root-flag-here>`
+`76e514318e76fb4f0cea069c95b2d716`
 
 ![Evil-WinRM as Administrator and the root flag](/images/tombwatcher/evil-winrm_admin-root-flag.png)
 
