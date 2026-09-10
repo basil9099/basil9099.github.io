@@ -1,0 +1,29 @@
+{{- /*
+  Inline an SVG diagram from assets/diagrams/ so it inherits the site's
+  light/dark CSS custom properties instead of baking in one theme.
+
+  Usage:
+    {{< diagram src="kdetect-architecture.svg" caption="How the pieces fit together." >}}
+
+  The SVG is expected to reference colours as var(--dd-paper), var(--dd-ink),
+  var(--dd-muted), var(--dd-accent), var(--dd-link) and var(--dd-paper-2),
+  which are mapped to the site palette in css/extended/terminal.css.
+*/ -}}
+{{- $src := .Get "src" | default (.Get 0) -}}
+{{- with $src -}}
+  {{- $path := printf "diagrams/%s" . -}}
+  {{- $res := resources.Get $path -}}
+  {{- if not $res -}}
+    {{- errorf "shortcode diagram: no such asset %q (called from %s)" $path $.Page.File.Path -}}
+  {{- end -}}
+<figure class="diagram">
+  <div class="diagram-canvas">
+    {{ $res.Content | safeHTML }}
+  </div>
+  {{- with $.Get "caption" }}
+  <figcaption>{{ . | markdownify }}</figcaption>
+  {{- end }}
+</figure>
+{{- else -}}
+  {{- errorf "shortcode diagram: missing required 'src' parameter (called from %s)" $.Page.File.Path -}}
+{{- end -}}

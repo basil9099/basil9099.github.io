@@ -290,6 +290,33 @@ process being hidden, not a gap in the report.
 Ten of the twelve detection methods in the original brief are implemented. One is
 implemented as a constraint on what kdetect is allowed to read. One is planned.
 
+## How it's put together
+
+One rule shapes the whole codebase: only the Source layer touches the operating
+system. Everything underneath it — parsers, collectors, detectors, scoring,
+reporting — is pure, and receives its data as an argument rather than going and
+fetching it.
+
+{{< diagram src="kdetect-architecture.svg" caption="Capture writes evidence, analysis reads it. The two halves only ever meet through a snapshot file, so a capture taken on a compromised box in August can be re-analysed by a detector written in September." >}}
+
+That is what makes the fixture seam real. A collector is handed a source:
+
+```python
+ProcfsProcessCollector().collect(LiveProcSource())
+ProcfsProcessCollector().collect(FixtureProcSource(path))
+```
+
+There is no `if testing:` branch anywhere, so a fixture-driven test exercises the
+identical code path as a live capture — which is the only reason the committed
+Diamorphine capture works as a regression test instead of as a mock that agrees
+with whatever I last wrote.
+
+The fixture trees carry an `_errors.json` sidecar mapping each path to an errno,
+because a directory of copied files can only replay the happy path, and every
+false positive in this project came out of a failure path: the kernel thread with
+no `exe`, the `EACCES` read, the process that vanished mid-scan. Those reads
+raise, the same way they do on a real box.
+
 ## How it was built
 
 Spec-first, in phases, with AI assistance, and the specs and implementation plans

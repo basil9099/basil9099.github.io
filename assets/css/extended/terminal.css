@@ -595,3 +595,61 @@ hr {
     .intro-name { font-size: 1.7rem; }
     .intro-role { font-size: 1rem; }
 }
+
+/* ── Inline SVG diagrams ────────────────────────────────────────────────── */
+/* The diagram shortcode inlines an SVG whose colours are written as
+   var(--dd-*). Mapping them onto the site palette here means one diagram
+   file serves both themes and follows the light/dark toggle live. */
+
+.diagram {
+    --dd-paper: var(--theme);
+    --dd-paper-2: var(--entry);
+    --dd-ink: var(--primary);
+    --dd-muted: var(--secondary);
+    --dd-accent: var(--accent);
+    --dd-link: var(--insane);
+
+    margin: 2rem 0 2.25rem;
+}
+
+.diagram-canvas {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--dd-paper);
+    padding: 12px;
+    overflow-x: auto;
+}
+
+.diagram .dd-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+/* PaperMod styles figcaption as a bold 16px title. A diagram caption is a
+   footnote to the picture, not a heading, so override it at equal specificity. */
+.post-content figure.diagram > figcaption {
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--secondary);
+    margin: 10px 0 0;
+    max-width: 68ch;
+    text-align: left;
+}
+
+.post-content figure.diagram > figcaption a {
+    color: var(--accent);
+}
+
+/* Narrow screens: a 960x1128 portrait diagram is unreadable scaled to a phone,
+   so let it keep a legible minimum width and scroll horizontally instead. */
+@media (max-width: 640px) {
+    .diagram .dd-svg {
+        width: 560px;
+        max-width: none;
+    }
+}
