@@ -7,7 +7,7 @@ categories: ["Projects"]
 difficulty: "Advanced"
 platform: "Debian 12 lab VM"
 featured: true
-featured_weight: 2
+featured_weight: 3
 summary: "A rootkit hides by lying to whoever asks, so asking /proc twice gets you the same lie twice. kdetect asks through channels a rootkit has to subvert separately and treats their disagreement as the finding. This is how it works, how I validated it against a real rootkit, and the false positives that nearly shipped."
 ---
 
