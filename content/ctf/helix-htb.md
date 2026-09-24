@@ -509,7 +509,7 @@ First, the identifier gaps. The writable nodes are 6, 8, 9, 12, 13, 14; nothing 
 
 Second, and because of that: **`Safety.RodsInserted` and `Safety.EmergencyCooling` are writable**, though the diagram padlocks both. The documented model and the real ACLs disagree. We don't need them for root, but someone out to cause damage would: writing emergency cooling is far worse than a shell.
 
-One caveat: `writable()` falls back to `AccessLevel` on any exception, so a node with a null `UserAccessLevel` gets judged on the server-wide value instead of ours. Either way the attribute only gives candidates, since a write can still come back `BadUserAccessDenied`. The write attempt is the real proof.
+One issue: `writable()` falls back to `AccessLevel` on any exception, so a node with a null `UserAccessLevel` gets judged on the server-wide value instead of ours. Either way the attribute only gives candidates, since a write can still come back `BadUserAccessDenied`. The write attempt is the real proof.
 
 ---
 
@@ -771,7 +771,7 @@ root@helix:/tmp# cat /root/root.txt
 
 ---
 
-## Takeaways
+## Things to remember
 
 - **An unauthenticated NiFi canvas is code execution as the service account.** `ExecuteProcess` and its siblings run OS commands by design, and NiFi only enforces auth over HTTPS, so plain HTTP with no access control hands every caller a shell. There's no patch because there's no bug: put NiFi behind TLS with authentication, and treat any open `/nifi-api` as already compromised.
 - **Diagnostic directories leak secrets.** `operator_id_ed25519.bak` sat in `support-bundles/`, readable by the service account, and a private key staged for a ticket is a key in production. Audit those staging paths, and rotate anything that has ever been attached to a support case.
