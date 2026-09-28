@@ -133,7 +133,7 @@ msf6 exploit(multi/http/apache_nifi_processor_rce) > run
 [+] Processor Delete sent successfully
 ```
 
-The `could not be validated` warning is confirmation, not a problem: the check asks whether the instance supports logins, this one doesn't, and Metasploit can't verify `ExecuteProcess` is reachable without actually creating a processor, which `run` does next anyway. It creates the processor, fires the payload, then stops and deletes it. That cleans the canvas, not the evidence: the flow-configuration history and `nifi-app.log` both keep a record.
+The `could not be validated` warning looks like a failure, but it's the confirmation we want. The check only asks whether the instance requires a login, and this one doesn't. Metasploit can't be sure `ExecuteProcess` is reachable without trying it, which `run` does next anyway. It creates the processor, fires the payload, then stops and deletes it. That cleans up the canvas, but not the logs: the flow-configuration history and `nifi-app.log` both keep a record.
 
 ![Metasploit landing a shell and cleaning up the processor](/images/helix/msfconsole2.png)
 
@@ -714,11 +714,11 @@ if __name__ == "__main__":
 
 ![The status read and trip-recovery block of exploit.py](/images/helix/exploit_python2.png)
 
-Four differences from the naive version, in order of importance.
+The working version fixes four things, the most important first.
 
-It checks the **window** condition after every step, not just the trip: `t >= OPEN_WINDOW_TEMP` stops the ramp the moment the door opens. It guards against the trip pre-emptively, backing the offset off by 3.0 instead of latching. If an earlier run already tripped, it resets to the section 5 safe state (override off, `NORMAL`, offset `0.0`, `ResetTrip`) and polls up to 45 seconds for the latch to clear before ramping again. And it resolves nodes by browse name through `find()` rather than hardcoding `ns=2;i=N`, since identifiers are a server detail but browse names come from the docs.
+The big one: it checks the **window** as well as the trip after every step, so `t >= OPEN_WINDOW_TEMP` stops the ramp the moment the door opens. It also backs off before tripping, dropping the offset by 3.0 rather than letting the trip latch. If an earlier run already tripped the plant, it walks back to the section 5 safe state (override off, `NORMAL`, offset `0.0`, then `ResetTrip`) and waits up to 45 seconds for the latch to clear before trying again. And it looks nodes up by browse name through `find()` instead of hardcoding `ns=2;i=N`, since the numeric IDs are a server detail while the names come straight from the manual.
 
-Two honest notes on that recovery block. The "5-minute service reset" in its last message is a guess: the run below never hit that branch, so I can't confirm it. If the 45-second poll doesn't clear a latch, just reset the box from the HTB panel. And the run below starts already clear at `NORMAL` with a zero offset, so the recovery branch is skipped this time. It earns its place on the runs where the plant is still tripped.
+Two notes on that recovery block. Its last message mentions a "5-minute service reset," but that's a guess: the run below never reached that branch, so I can't confirm it. If the 45-second poll doesn't clear a latch, just reset the box from the HTB panel. The run below also starts clean, already at `NORMAL` with a zero offset, so the recovery branch never runs this time. It earns its place on the runs where the plant is still tripped.
 
 Run it:
 
@@ -776,7 +776,7 @@ root@helix:/tmp# cat /root/root.txt
 - **An unauthenticated NiFi canvas is code execution as the service account.** `ExecuteProcess` and its siblings run OS commands by design, and NiFi only enforces auth over HTTPS, so plain HTTP with no access control hands every caller a shell. There's no patch because there's no bug: put NiFi behind TLS with authentication, and treat any open `/nifi-api` as already compromised.
 - **Diagnostic directories leak secrets.** `operator_id_ed25519.bak` sat in `support-bundles/`, readable by the service account, and a private key staged for a ticket is a key in production. Audit those staging paths, and rotate anything that has ever been attached to a support case.
 - **A password-protected document is an offline crack.** The PDF carries its own verifier, so once the file leaves the host the password is a john target, not access control. `operator1` fell to rockyou instantly. Protect documents that describe safety logic with real access control, not a passphrase.
-- **Anonymous OPC UA is two failures, not one.** `SecurityPolicy None` is an unencrypted channel; an accepted `Anonymous` token is no user auth. Helix fixed neither, so one `Client(url)` reached mode, override, calibration and the safety trip alike. Enumerate `UserAccessLevel` bit 1 on your own servers to see what an anonymous session can really write.
+- **Anonymous OPC UA fails twice over.** `SecurityPolicy None` leaves the channel unencrypted, and an accepted `Anonymous` token means no user login at all. Helix had both wide open, so a bare `Client(url)` reached mode, override, calibration and the safety trip. Enumerate `UserAccessLevel` bit 1 on your own servers to see what an anonymous session can actually write.
 - **The real ACLs disagreed with the diagram.** `Safety.RodsInserted` and `Safety.EmergencyCooling` are documented read-only but writable in practice, while `Temperature`, `Pressure` and `TripActive` genuinely are locked. A specific misconfiguration, not a blanket one. Diagrams describe intent; only enumeration describes reality, and the gap is where the finding lives.
 - **A privilege decision must never read a value the attacker can write.** `helix-maint-console` grants root on reported temperature, and reported temperature is raw plus a `CalibrationOffset` writable over an anonymous session. No reactor was heated; the reading was forged. That is **CWE-807**, the same mistake as trusting a hidden form field, with a safety controller on the other end.
 - **Drive off the reading, not the input.** Offset 1 measured 285.31 °C on one run and 283.21 °C on another, so 13 is a baseline artefact, not a constant. The naive loop only asked whether it had already tripped; the working one reads `Temperature` back after each write and stops on that. Steer a live process into a narrow band and you have to close the loop on the measurement, because the same input lands somewhere different every time.
