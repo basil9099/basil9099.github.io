@@ -8,7 +8,7 @@ difficulty: "Medium"
 platform: "Hack The Box"
 os: "Linux"
 featured: true
-featured_weight: 1
+featured_weight: 2
 summary: "A Linux box modelling an industrial plant, where the privilege escalation is not a CVE but the plant's own safety logic being fed a forged sensor reading. Unauthenticated Apache NiFi → operator SSH key in support-bundles → password-cracked PLC manual → anonymous OPC UA writes → CalibrationOffset ramped into the maintenance window → helix-maint-console → root."
 images: ["/images/helix/helix.png"]
 cover:
